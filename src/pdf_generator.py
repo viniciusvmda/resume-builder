@@ -45,7 +45,7 @@ def _sanitize_text(text: str) -> str:
     text = text.encode("latin-1", errors="replace").decode("latin-1")
     return text
 
-from resume_builder.ats_rules import (
+from ats_rules import (
     BULLET_INDENT,
     FONT_FAMILY,
     FONT_SIZE_BODY,
@@ -61,7 +61,7 @@ from resume_builder.ats_rules import (
     SECTION_HEADINGS,
     SECTION_SPACING,
 )
-from resume_builder.selector import SelectedResume
+from selector import SelectedResume
 
 
 class ResumePDF(FPDF):

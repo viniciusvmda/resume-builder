@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from resume_builder.models import (
+from models import (
     Certification,
     Education,
     Experience,

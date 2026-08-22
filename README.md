@@ -24,22 +24,22 @@ python -m pip install -e ".[dev]"
 
 ```bash
 # Generate a generic resume (all experience, default ordering)
-python -m resume_builder.cli generate
+python -m cli generate
 
 # Generate a targeted resume for a specific job description
-python -m resume_builder.cli generate --job-description path/to/jd.txt
+python -m cli generate --job-description path/to/jd.txt
 
 # Generate with inline JD text
-python -m resume_builder.cli generate --job-description-text "We are looking for..."
+python -m cli generate --job-description-text "We are looking for..."
 
 # Pass contact info at runtime (avoids storing sensitive data in files)
-python -m resume_builder.cli generate --email "you@example.com" --phone "+55 31 99999-9999"
+python -m cli generate --email "you@example.com" --phone "+55 31 99999-9999"
 
 # Show ATS match score against a job description
-python -m resume_builder.cli score --job-description path/to/jd.txt
+python -m cli score --job-description path/to/jd.txt
 
 # Specify custom data directory or output path
-python -m resume_builder.cli --data-dir ./data generate --output ./my-resume.pdf
+python -m cli --data-dir ./data generate --output ./my-resume.pdf
 ```
 
 ## How It Works

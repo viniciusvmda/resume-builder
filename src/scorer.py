@@ -6,7 +6,7 @@ from rapidfuzz import fuzz
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from resume_builder.models import (
+from models import (
     Certification,
     Experience,
     ExperienceBullet,

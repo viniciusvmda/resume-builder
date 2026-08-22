@@ -1,12 +1,12 @@
 """Content selection and ranking logic."""
 
-from resume_builder.ats_rules import (
+from ats_rules import (
     DEFAULT_SECTION_ORDER,
     MAX_BULLETS_PER_EXPERIENCE,
     MAX_BULLETS_PER_EXPERIENCE_TARGETED,
     MAX_SKILLS_PER_CATEGORY,
 )
-from resume_builder.models import (
+from models import (
     Certification,
     Education,
     Experience,

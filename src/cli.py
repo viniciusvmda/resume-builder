@@ -4,12 +4,12 @@ from pathlib import Path
 
 import click
 
-from resume_builder.filters import apply_filters, filter_bullets
-from resume_builder.models import ExperienceBullet
-from resume_builder.parser import load_resume_data
-from resume_builder.pdf_generator import generate_pdf
-from resume_builder.scorer import score_resume
-from resume_builder.selector import SelectedResume, select_generic, select_targeted
+from filters import apply_filters, filter_bullets
+from models import ExperienceBullet
+from parser import load_resume_data
+from pdf_generator import generate_pdf
+from scorer import score_resume
+from selector import SelectedResume, select_generic, select_targeted
 
 DEFAULT_DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DEFAULT_OUTPUT_DIR = Path(__file__).parent.parent.parent / "output"

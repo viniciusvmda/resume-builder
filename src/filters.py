@@ -7,7 +7,7 @@ Rules detect and warn/redact content that violates ATS or confidentiality guidel
 import re
 from dataclasses import dataclass, field
 
-from resume_builder.models import ExperienceBullet
+from models import ExperienceBullet
 
 
 @dataclass

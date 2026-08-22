@@ -24,10 +24,13 @@ dev = [
 ]
 
 [project.scripts]
-resume-builder = "resume_builder.cli:main"
+resume-builder = "cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/resume_builder"]
+packages = ["src"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src" = ""
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
