@@ -7,7 +7,6 @@
 On Linux:
 
 ```bash
-cd tools/resume-builder
 python3.14 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
@@ -16,7 +15,6 @@ pip install -e ".[dev]"
 On Windows:
 
 ```bash
-cd tools/resume-builder
 python -m venv .venv
 .\.venv\Scripts\activate.bat
 python -m pip install -e ".[dev]"

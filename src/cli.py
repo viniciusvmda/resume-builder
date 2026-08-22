@@ -20,7 +20,7 @@ DEFAULT_OUTPUT_DIR = Path(__file__).parent.parent.parent / "output"
     "--data-dir",
     type=click.Path(exists=True, path_type=Path),
     default=None,
-    help="Path to YAML data directory. Defaults to tools/resume-builder/data/",
+    help="Path to YAML data directory. Defaults to ./data/",
 )
 @click.pass_context
 def main(ctx, data_dir: Path | None):
