@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+output/*.pdf
+
+# Local testing
+run.sh
+run.ps1
+job-description.txt
+data/
