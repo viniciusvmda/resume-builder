@@ -2,7 +2,7 @@
 
 import pytest
 
-from resume_builder.models import (
+from models import (
     Certification,
     Education,
     Experience,
@@ -12,7 +12,7 @@ from resume_builder.models import (
     Skill,
     SkillCategory,
 )
-from resume_builder.selector import select_generic, select_targeted
+from selector import select_generic, select_targeted
 
 
 @pytest.fixture
@@ -30,14 +30,15 @@ def sample_resume_data():
                 role="Cloud Architect",
                 start_date="Jan 2023",
                 end_date="Present",
+                keywords=["Azure", "Terraform", "Kubernetes", "leadership", "cost", "CI/CD"],
                 bullets=[
-                    ExperienceBullet(text="Designed Azure landing zones", keywords=["Azure"]),
-                    ExperienceBullet(text="Implemented Terraform modules", keywords=["Terraform"]),
-                    ExperienceBullet(text="Led team of 5 engineers", keywords=["leadership"]),
-                    ExperienceBullet(text="Optimized cloud costs by 25%", keywords=["cost"]),
-                    ExperienceBullet(text="Built CI/CD pipelines", keywords=["CI/CD"]),
-                    ExperienceBullet(text="Managed Kubernetes clusters", keywords=["Kubernetes"]),
-                    ExperienceBullet(text="Wrote documentation", keywords=[]),
+                    ExperienceBullet(text="Designed Azure landing zones"),
+                    ExperienceBullet(text="Implemented Terraform modules"),
+                    ExperienceBullet(text="Led team of 5 engineers"),
+                    ExperienceBullet(text="Optimized cloud costs by 25%"),
+                    ExperienceBullet(text="Built CI/CD pipelines"),
+                    ExperienceBullet(text="Managed Kubernetes clusters"),
+                    ExperienceBullet(text="Wrote documentation"),
                 ],
             ),
             Experience(
@@ -45,9 +46,10 @@ def sample_resume_data():
                 role="Full-Stack Developer",
                 start_date="Jan 2020",
                 end_date="Dec 2022",
+                keywords=["React", "Node.js"],
                 bullets=[
-                    ExperienceBullet(text="Built React applications", keywords=["React"]),
-                    ExperienceBullet(text="Developed Node.js APIs", keywords=["Node.js"]),
+                    ExperienceBullet(text="Built React applications"),
+                    ExperienceBullet(text="Developed Node.js APIs"),
                 ],
             ),
         ],
@@ -102,8 +104,8 @@ class TestSelectGeneric:
     def test_default_section_order(self, sample_resume_data):
         result = select_generic(sample_resume_data)
         assert result.section_order[0] == "summary"
+        assert result.section_order[-1] == "skills"
         assert "experience" in result.section_order
-        assert "skills" in result.section_order
 
 
 class TestSelectTargeted:
@@ -158,3 +160,30 @@ class TestSelectTargeted:
         result = select_targeted(sample_resume_data, scored)
         _, bullets = result.experiences[0]
         assert len(bullets) <= 5  # MAX_BULLETS_PER_EXPERIENCE_TARGETED
+
+    def test_section_order_fixed_positions(self, sample_resume_data):
+        scored = {
+            "jd_keywords": ["azure"],
+            "scored_skills": [("Cloud", Skill(name="Azure", years=5), 1.0)],
+            "scored_experiences": [
+                (
+                    sample_resume_data.experiences[0],
+                    0.8,
+                    [(b, 0.5) for b in sample_resume_data.experiences[0].bullets],
+                ),
+                (
+                    sample_resume_data.experiences[1],
+                    0.2,
+                    [(b, 0.1) for b in sample_resume_data.experiences[1].bullets],
+                ),
+            ],
+            "scored_certifications": [
+                (sample_resume_data.certifications[0], 0.9),
+                (sample_resume_data.certifications[1], 0.3),
+            ],
+            "overall_score": 0.5,
+        }
+        result = select_targeted(sample_resume_data, scored)
+        assert result.section_order[0] == "summary"
+        assert result.section_order[-2] == "education"
+        assert result.section_order[-1] == "skills"

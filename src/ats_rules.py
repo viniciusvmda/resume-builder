@@ -10,7 +10,7 @@ SECTION_HEADINGS = {
 }
 
 # Section order for generic resume (no JD)
-DEFAULT_SECTION_ORDER = ["summary", "experience", "skills", "certifications", "education"]
+DEFAULT_SECTION_ORDER = ["summary", "experience", "certifications", "education", "skills"]
 
 # PDF formatting constants
 FONT_FAMILY = "Helvetica"

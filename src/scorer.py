@@ -132,13 +132,7 @@ def score_bullet(bullet: ExperienceBullet, jd_keywords: list[str], job_descripti
     tfidf_score = score_text_similarity(bullet.text, job_description)
     keyword_score = score_keyword_match(bullet.text, jd_keywords)
 
-    # Also check bullet's own keywords if defined
-    bullet_kw_bonus = 0.0
-    if bullet.keywords:
-        overlap = sum(1 for kw in bullet.keywords if kw.lower() in job_description.lower())
-        bullet_kw_bonus = overlap / len(bullet.keywords) * 0.2
-
-    return (tfidf_score * 0.4) + (keyword_score * 0.5) + bullet_kw_bonus
+    return (tfidf_score * 0.4) + (keyword_score * 0.5)
 
 
 def score_experience(experience: Experience, jd_keywords: list[str], job_description: str) -> float:
@@ -155,7 +149,13 @@ def score_experience(experience: Experience, jd_keywords: list[str], job_descrip
     bullet_scores = [score_bullet(b, jd_keywords, job_description) for b in experience.bullets]
     avg_bullet_score = sum(bullet_scores) / len(bullet_scores) if bullet_scores else 0.0
 
-    return (role_score * 0.3) + (desc_score * 0.2) + (avg_bullet_score * 0.5)
+    # Bonus for the role's own keywords appearing in the job description
+    keyword_bonus = 0.0
+    if experience.keywords:
+        overlap = sum(1 for kw in experience.keywords if kw.lower() in job_description.lower())
+        keyword_bonus = overlap / len(experience.keywords) * 0.2
+
+    return (role_score * 0.3) + (desc_score * 0.2) + (avg_bullet_score * 0.5) + keyword_bonus
 
 
 def score_certification(cert: Certification, jd_keywords: list[str], job_description: str) -> float:

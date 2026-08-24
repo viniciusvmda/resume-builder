@@ -160,6 +160,14 @@ class ResumePDF(FPDF):
                 self.multi_cell(0, LINE_HEIGHT, _sanitize_text(f"- {bullet.text}"))
                 self.set_left_margin(original_margin)
 
+            # Keywords
+            if exp.keywords:
+                self.ln(1)
+                self.set_font(FONT_FAMILY, "I", FONT_SIZE_SMALL)
+                keywords_line = "Keywords: " + ", ".join(exp.keywords)
+                self.multi_cell(0, LINE_HEIGHT, _sanitize_text(keywords_line))
+                self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+
             if i < len(resume.experiences) - 1:
                 self.ln(3)
 

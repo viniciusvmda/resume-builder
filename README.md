@@ -54,7 +54,7 @@ python -m cli --data-dir ./data generate --output ./my-resume.pdf
 Edit your career data in `data/`:
 
 - `profile.yaml` — Name, contact info, headline, summary
-- `experiences.yaml` — Work history with bullet points and keywords
+- `experiences.yaml` — Work history with bullet points and per-role keywords (rendered in the PDF and used for scoring)
 - `skills.yaml` — Skills grouped by category with years of experience and aliases
 - `certifications.yaml` — Professional certifications
 - `education.yaml` — Degrees and institutions
@@ -79,7 +79,7 @@ description, so you can try the CLI without setting up your own data first:
 python -m cli --data-dir example generate --output ./example-resume.pdf
 
 # Generate a resume tailored to the example job description
-python -m cli --data-dir example generate --job-description example/job-description.txt --output ./example-resume-tailored.pdf
+python -m cli --data-dir example generate --job-description example/job-description.txt --output example/example-resume-tailored.pdf
 
 # Score the example profile against the example job description
 python -m cli --data-dir example score --job-description example/job-description.txt

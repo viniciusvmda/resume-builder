@@ -2,10 +2,11 @@
 
 import pytest
 
-from resume_builder.models import Certification, ExperienceBullet, Experience, Skill
-from resume_builder.scorer import (
+from models import Certification, ExperienceBullet, Experience, Skill
+from scorer import (
     extract_keywords,
     score_bullet,
+    score_experience,
     score_keyword_match,
     score_skill,
     score_text_similarity,
@@ -93,7 +94,6 @@ class TestScoreBullet:
     def test_relevant_bullet_scores_high(self):
         bullet = ExperienceBullet(
             text="Designed hub-and-spoke network topology with Azure Firewall and Private Endpoints",
-            keywords=["Azure", "networking", "hub-and-spoke"],
         )
         jd = "Design hub-and-spoke network architectures with Azure networking services"
         jd_keywords = ["azure", "hub-and-spoke", "networking", "network"]
@@ -103,9 +103,28 @@ class TestScoreBullet:
     def test_irrelevant_bullet_scores_low(self):
         bullet = ExperienceBullet(
             text="Built a content management platform for press releases",
-            keywords=["CMS", "frontend"],
         )
         jd = "Cloud architect with Azure, Terraform, and Kubernetes"
         jd_keywords = ["azure", "terraform", "kubernetes", "cloud"]
         score = score_bullet(bullet, jd_keywords, jd)
         assert score < 0.2
+
+
+class TestScoreExperience:
+    def test_role_keywords_boost_score(self):
+        jd = "Cloud architect with Azure, Terraform, and Kubernetes"
+        jd_keywords = ["azure", "terraform", "kubernetes", "cloud"]
+        base = Experience(
+            company="Acme",
+            role="Engineer",
+            start_date="Jan 2020",
+            bullets=[ExperienceBullet(text="Did some unrelated work")],
+        )
+        with_keywords = Experience(
+            company="Acme",
+            role="Engineer",
+            start_date="Jan 2020",
+            keywords=["Azure", "Terraform", "Kubernetes"],
+            bullets=[ExperienceBullet(text="Did some unrelated work")],
+        )
+        assert score_experience(with_keywords, jd_keywords, jd) > score_experience(base, jd_keywords, jd)
