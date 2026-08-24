@@ -5,7 +5,7 @@ import tempfile
 
 import pytest
 
-from resume_builder.models import (
+from models import (
     Certification,
     Education,
     Experience,
@@ -14,8 +14,8 @@ from resume_builder.models import (
     Skill,
     SkillCategory,
 )
-from resume_builder.pdf_generator import generate_pdf
-from resume_builder.selector import SelectedResume
+from pdf_generator import generate_pdf
+from selector import SelectedResume
 
 
 @pytest.fixture
@@ -39,6 +39,7 @@ def sample_selected_resume():
                     start_date="Jan 2023",
                     end_date="Present",
                     description="Leading cloud infrastructure initiatives.",
+                    keywords=["Azure", "Terraform", "cost optimization"],
                     bullets=[
                         ExperienceBullet(text="Designed Azure landing zones for 50+ subscriptions"),
                         ExperienceBullet(text="Implemented Terraform modules achieving 30% faster deployments"),
@@ -74,7 +75,7 @@ def sample_selected_resume():
                 end_year=2019,
             ),
         ],
-        section_order=["summary", "experience", "skills", "certifications", "education"],
+        section_order=["summary", "experience", "certifications", "education", "skills"],
     )
 
 

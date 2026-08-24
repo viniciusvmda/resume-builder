@@ -2,8 +2,8 @@
 
 import pytest
 
-from resume_builder.filters import apply_filters, filter_bullets
-from resume_builder.models import ExperienceBullet
+from filters import apply_filters, filter_bullets
+from models import ExperienceBullet
 
 
 class TestApplyFilters:

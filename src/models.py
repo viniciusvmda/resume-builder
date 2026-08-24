@@ -17,7 +17,6 @@ class ExperienceBullet(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     text: str
-    keywords: list[str] = []
 
 
 class Experience(BaseModel):
@@ -29,6 +28,7 @@ class Experience(BaseModel):
     end_date: str = "Present"
     location: str | None = None
     description: str | None = None
+    keywords: list[str] = []
     bullets: list[ExperienceBullet] = []
 
 

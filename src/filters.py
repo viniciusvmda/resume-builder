@@ -183,7 +183,7 @@ def filter_bullets(
     for bullet in bullets:
         result = apply_filters(bullet.text, strict=strict)
         if strict and result.filtered != result.original:
-            new_bullet = ExperienceBullet(text=result.filtered, keywords=bullet.keywords)
+            new_bullet = ExperienceBullet(text=result.filtered)
         else:
             new_bullet = bullet
         results.append((new_bullet, result.violations))
