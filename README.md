@@ -4,7 +4,7 @@
 
 ## Quick Start
 
-On Linux:
+On Linux or MacOS:
 
 ```bash
 python3.14 -m venv .venv
