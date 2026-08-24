@@ -1,7 +1,7 @@
 """Tests for PDF generation."""
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pytest
 

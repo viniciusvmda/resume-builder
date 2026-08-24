@@ -1,10 +1,8 @@
 """ATS-friendly PDF generation using fpdf2."""
 
-import re
 from pathlib import Path
 
 from fpdf import FPDF
-
 
 # Unicode → ASCII replacements for PDF compatibility with core fonts
 _UNICODE_REPLACEMENTS = {

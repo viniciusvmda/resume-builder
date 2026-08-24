@@ -1,8 +1,7 @@
 """Tests for the scoring engine."""
 
-import pytest
 
-from models import Certification, ExperienceBullet, Experience, Skill
+from models import Experience, ExperienceBullet, Skill
 from scorer import (
     extract_keywords,
     score_bullet,

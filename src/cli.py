@@ -5,7 +5,6 @@ from pathlib import Path
 import click
 
 from filters import apply_filters, filter_bullets
-from models import ExperienceBullet
 from parser import load_resume_data
 from pdf_generator import generate_pdf
 from scorer import score_resume
@@ -142,7 +141,7 @@ def generate(
         top_skills = sorted(scored["scored_skills"], key=lambda x: x[2], reverse=True)
         top_skills = [(cat, skill, s) for cat, skill, s in top_skills if s > 0][:10]
         if top_skills:
-            click.echo(f"\nTop Matching Skills:")
+            click.echo("\nTop Matching Skills:")
             for cat, skill, s in top_skills:
                 click.echo(f"  [{min(s, 1.0):.0%}] {skill.name} ({cat})")
 
@@ -202,7 +201,7 @@ def score(ctx, job_description: Path | None, job_description_text: str | None):
         click.echo(f"  - {kw}")
 
     # Show top matching skills
-    click.echo(f"\nTop Matching Skills:")
+    click.echo("\nTop Matching Skills:")
     top_skills = sorted(scored["scored_skills"], key=lambda x: x[2], reverse=True)[:10]
     for cat, skill, s in top_skills:
         if s > 0:
@@ -210,7 +209,7 @@ def score(ctx, job_description: Path | None, job_description_text: str | None):
             click.echo(f"  [{display_score:.0%}] {skill.name} ({cat})")
 
     # Show experience ranking
-    click.echo(f"\nExperience Relevance Ranking:")
+    click.echo("\nExperience Relevance Ranking:")
     for exp, s, _ in sorted(
         scored["scored_experiences"], key=lambda x: x[1], reverse=True
     ):
@@ -358,10 +357,10 @@ def _print_low_score_recommendations(scored: dict, resume_data) -> None:
             missing_keywords.append(kw)
 
     if missing_keywords:
-        click.echo(f"\n  Missing JD keywords not found in your data:")
+        click.echo("\n  Missing JD keywords not found in your data:")
         click.echo(click.style(f"    {', '.join(missing_keywords[:15])}", fg="red"))
         click.echo(
-            f"    → Add these to skills.yaml (with aliases) or update experience bullets"
+            "    → Add these to skills.yaml (with aliases) or update experience bullets"
         )
 
     # Find weakly matched skills (in JD but scored low)
@@ -371,20 +370,20 @@ def _print_low_score_recommendations(scored: dict, resume_data) -> None:
         if 0 < score < 0.5
     ]
     if weak_skills:
-        click.echo(f"\n  Weak skill matches (present but low relevance):")
+        click.echo("\n  Weak skill matches (present but low relevance):")
         for name, s in sorted(weak_skills, key=lambda x: x[1]):
             click.echo(click.style(f"    {name}", fg="yellow") + f" ({s:.0%})")
         click.echo(
-            f"    → Add keyword aliases or strengthen related experience bullets"
+            "    → Add keyword aliases or strengthen related experience bullets"
         )
 
     # General tips
-    click.echo(f"\n  General tips:")
+    click.echo("\n  General tips:")
     click.echo(
-        f"    - Tailor your summary to emphasize keywords from the job description"
+        "    - Tailor your summary to emphasize keywords from the job description"
     )
-    click.echo(f"    - Ensure certifications align with role requirements")
-    click.echo(f"    - Add relevant keyword aliases in skills.yaml for better matching")
+    click.echo("    - Ensure certifications align with role requirements")
+    click.echo("    - Add relevant keyword aliases in skills.yaml for better matching")
 
 
 if __name__ == "__main__":

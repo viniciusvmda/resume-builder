@@ -12,7 +12,6 @@ from models import (
     ExperienceBullet,
     ResumeData,
     Skill,
-    SkillCategory,
 )
 
 # Common stop words to exclude from keyword extraction
