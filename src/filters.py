@@ -82,7 +82,10 @@ PATTERN_FILTERS: list[tuple[str, str, str]] = [
 DESIGN_LANGUAGE_PATTERNS: list[tuple[str, str]] = [
     (r"\bcomposable\s*resources\b", "Describe the solution's purpose instead"),
     (r"\borchestration\s*internals\b", "Describe outcome, not orchestration details"),
-    (r"\blayered\s*(?:architecture|composition)\s*pattern\b", "Describe what the tool does"),
+    (
+        r"\blayered\s*(?:architecture|composition)\s*pattern\b",
+        "Describe what the tool does",
+    ),
     (r"\bEffect-based\s*dependency\s*injection\b", "Describe the tool's purpose"),
 ]
 
@@ -122,45 +125,55 @@ def apply_filters(text: str, strict: bool = False) -> FilterResult:
     for rule_name, pattern, suggestion in PATTERN_FILTERS:
         matches = re.finditer(pattern, filtered, re.IGNORECASE)
         for match in matches:
-            violations.append(FilterViolation(
-                rule=rule_name,
-                matched_text=match.group(),
-                suggestion=suggestion,
-            ))
+            violations.append(
+                FilterViolation(
+                    rule=rule_name,
+                    matched_text=match.group(),
+                    suggestion=suggestion,
+                )
+            )
             if strict:
-                filtered = filtered[:match.start()] + filtered[match.end():]
+                filtered = filtered[: match.start()] + filtered[match.end() :]
 
     # Apply design language patterns
     for pattern, suggestion in DESIGN_LANGUAGE_PATTERNS:
         matches = re.finditer(pattern, filtered, re.IGNORECASE)
         for match in matches:
-            violations.append(FilterViolation(
-                rule="no-design-language",
-                matched_text=match.group(),
-                suggestion=suggestion,
-            ))
+            violations.append(
+                FilterViolation(
+                    rule="no-design-language",
+                    matched_text=match.group(),
+                    suggestion=suggestion,
+                )
+            )
 
     # Apply percentage context patterns
     for pattern, replacement, suggestion in PERCENTAGE_CONTEXT_PATTERNS:
         matches = re.finditer(pattern, filtered, re.IGNORECASE)
         for match in matches:
-            violations.append(FilterViolation(
-                rule="no-exact-adoption-percentages",
-                matched_text=match.group(),
-                suggestion=suggestion,
-            ))
+            violations.append(
+                FilterViolation(
+                    rule="no-exact-adoption-percentages",
+                    matched_text=match.group(),
+                    suggestion=suggestion,
+                )
+            )
             if strict:
-                filtered = filtered[:match.start()] + replacement + filtered[match.end():]
+                filtered = (
+                    filtered[: match.start()] + replacement + filtered[match.end() :]
+                )
 
     # Apply user count patterns
     for pattern, suggestion in USER_COUNT_PATTERNS:
         matches = re.finditer(pattern, filtered, re.IGNORECASE)
         for match in matches:
-            violations.append(FilterViolation(
-                rule="no-exact-user-breakdown",
-                matched_text=match.group(),
-                suggestion=suggestion,
-            ))
+            violations.append(
+                FilterViolation(
+                    rule="no-exact-user-breakdown",
+                    matched_text=match.group(),
+                    suggestion=suggestion,
+                )
+            )
 
     # Clean up double spaces from redactions
     if strict:

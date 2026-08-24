@@ -49,7 +49,10 @@ def load_skills(data_dir: Path) -> list[SkillCategory]:
     data = load_yaml(data_dir / "skills.yaml")
     categories = []
     for cat in data:
-        skills = [Skill(**s) if isinstance(s, dict) else Skill(name=s) for s in cat.get("skills", [])]
+        skills = [
+            Skill(**s) if isinstance(s, dict) else Skill(name=s)
+            for s in cat.get("skills", [])
+        ]
         categories.append(SkillCategory(category=cat["category"], skills=skills))
     return categories
 
@@ -57,7 +60,10 @@ def load_skills(data_dir: Path) -> list[SkillCategory]:
 def load_certifications(data_dir: Path) -> list[Certification]:
     """Load certifications.yaml."""
     data = load_yaml(data_dir / "certifications.yaml")
-    return [Certification(**c) if isinstance(c, dict) else Certification(name=c) for c in data]
+    return [
+        Certification(**c) if isinstance(c, dict) else Certification(name=c)
+        for c in data
+    ]
 
 
 def load_education(data_dir: Path) -> list[Education]:

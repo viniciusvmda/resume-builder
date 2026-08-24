@@ -127,4 +127,6 @@ class TestScoreExperience:
             keywords=["Azure", "Terraform", "Kubernetes"],
             bullets=[ExperienceBullet(text="Did some unrelated work")],
         )
-        assert score_experience(with_keywords, jd_keywords, jd) > score_experience(base, jd_keywords, jd)
+        assert score_experience(with_keywords, jd_keywords, jd) > score_experience(
+            base, jd_keywords, jd
+        )

@@ -17,19 +17,117 @@ from models import (
 
 # Common stop words to exclude from keyword extraction
 STOP_WORDS = {
-    "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
-    "of", "with", "by", "from", "is", "are", "was", "were", "be", "been",
-    "being", "have", "has", "had", "do", "does", "did", "will", "would",
-    "could", "should", "may", "might", "shall", "can", "need", "must",
-    "that", "this", "these", "those", "it", "its", "we", "you", "they",
-    "our", "your", "their", "my", "his", "her", "who", "what", "which",
-    "when", "where", "how", "all", "each", "every", "both", "few", "more",
-    "most", "other", "some", "such", "no", "not", "only", "same", "so",
-    "than", "too", "very", "just", "about", "above", "after", "again",
-    "also", "as", "because", "before", "between", "during", "if", "into",
-    "through", "under", "until", "up", "while", "able", "work", "working",
-    "experience", "including", "using", "well", "strong", "required",
-    "preferred", "etc", "team", "teams", "role", "ability", "across",
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "in",
+    "on",
+    "at",
+    "to",
+    "for",
+    "of",
+    "with",
+    "by",
+    "from",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "have",
+    "has",
+    "had",
+    "do",
+    "does",
+    "did",
+    "will",
+    "would",
+    "could",
+    "should",
+    "may",
+    "might",
+    "shall",
+    "can",
+    "need",
+    "must",
+    "that",
+    "this",
+    "these",
+    "those",
+    "it",
+    "its",
+    "we",
+    "you",
+    "they",
+    "our",
+    "your",
+    "their",
+    "my",
+    "his",
+    "her",
+    "who",
+    "what",
+    "which",
+    "when",
+    "where",
+    "how",
+    "all",
+    "each",
+    "every",
+    "both",
+    "few",
+    "more",
+    "most",
+    "other",
+    "some",
+    "such",
+    "no",
+    "not",
+    "only",
+    "same",
+    "so",
+    "than",
+    "too",
+    "very",
+    "just",
+    "about",
+    "above",
+    "after",
+    "again",
+    "also",
+    "as",
+    "because",
+    "before",
+    "between",
+    "during",
+    "if",
+    "into",
+    "through",
+    "under",
+    "until",
+    "up",
+    "while",
+    "able",
+    "work",
+    "working",
+    "experience",
+    "including",
+    "using",
+    "well",
+    "strong",
+    "required",
+    "preferred",
+    "etc",
+    "team",
+    "teams",
+    "role",
+    "ability",
+    "across",
 }
 
 
@@ -127,7 +225,9 @@ def score_skill(skill: Skill, jd_keywords: list[str], job_description: str) -> f
     return best_score + years_boost
 
 
-def score_bullet(bullet: ExperienceBullet, jd_keywords: list[str], job_description: str) -> float:
+def score_bullet(
+    bullet: ExperienceBullet, jd_keywords: list[str], job_description: str
+) -> float:
     """Score a single experience bullet against the job description."""
     tfidf_score = score_text_similarity(bullet.text, job_description)
     keyword_score = score_keyword_match(bullet.text, jd_keywords)
@@ -135,7 +235,9 @@ def score_bullet(bullet: ExperienceBullet, jd_keywords: list[str], job_descripti
     return (tfidf_score * 0.4) + (keyword_score * 0.5)
 
 
-def score_experience(experience: Experience, jd_keywords: list[str], job_description: str) -> float:
+def score_experience(
+    experience: Experience, jd_keywords: list[str], job_description: str
+) -> float:
     """Score an entire experience entry."""
     # Score role title match
     role_score = score_keyword_match(experience.role, jd_keywords)
@@ -146,19 +248,30 @@ def score_experience(experience: Experience, jd_keywords: list[str], job_descrip
         desc_score = score_text_similarity(experience.description, job_description)
 
     # Average bullet scores
-    bullet_scores = [score_bullet(b, jd_keywords, job_description) for b in experience.bullets]
+    bullet_scores = [
+        score_bullet(b, jd_keywords, job_description) for b in experience.bullets
+    ]
     avg_bullet_score = sum(bullet_scores) / len(bullet_scores) if bullet_scores else 0.0
 
     # Bonus for the role's own keywords appearing in the job description
     keyword_bonus = 0.0
     if experience.keywords:
-        overlap = sum(1 for kw in experience.keywords if kw.lower() in job_description.lower())
+        overlap = sum(
+            1 for kw in experience.keywords if kw.lower() in job_description.lower()
+        )
         keyword_bonus = overlap / len(experience.keywords) * 0.2
 
-    return (role_score * 0.3) + (desc_score * 0.2) + (avg_bullet_score * 0.5) + keyword_bonus
+    return (
+        (role_score * 0.3)
+        + (desc_score * 0.2)
+        + (avg_bullet_score * 0.5)
+        + keyword_bonus
+    )
 
 
-def score_certification(cert: Certification, jd_keywords: list[str], job_description: str) -> float:
+def score_certification(
+    cert: Certification, jd_keywords: list[str], job_description: str
+) -> float:
     """Score a certification against the job description."""
     return score_keyword_match(cert.name, jd_keywords)
 
@@ -178,14 +291,21 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
             scored_skills.append((category.category, skill, s))
 
     # Score experiences
-    scored_experiences: list[tuple[Experience, float, list[tuple[ExperienceBullet, float]]]] = []
+    scored_experiences: list[
+        tuple[Experience, float, list[tuple[ExperienceBullet, float]]]
+    ] = []
     for exp in resume_data.experiences:
         exp_score = score_experience(exp, jd_keywords, job_description)
-        bullet_scores = [(b, score_bullet(b, jd_keywords, job_description)) for b in exp.bullets]
+        bullet_scores = [
+            (b, score_bullet(b, jd_keywords, job_description)) for b in exp.bullets
+        ]
         scored_experiences.append((exp, exp_score, bullet_scores))
 
     # Score certifications
-    scored_certs = [(c, score_certification(c, jd_keywords, job_description)) for c in resume_data.certifications]
+    scored_certs = [
+        (c, score_certification(c, jd_keywords, job_description))
+        for c in resume_data.certifications
+    ]
 
     # Compute overall match score
     all_scores = (
