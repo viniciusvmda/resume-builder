@@ -1,0 +1,63 @@
+- company: Skyline Analytics
+  role: Senior Backend Engineer
+  start_date: "Mar 2022"
+  end_date: "Present"
+  description: "Own the ingestion and processing pipeline for a real-time analytics platform, handling data from thousands of customer integrations. Lead reliability and scalability initiatives for the core event-processing services."
+  bullets:
+    - text: "Redesigned the event ingestion pipeline around Kafka and Go consumers, increasing sustained throughput from 8k to 45k events/sec while cutting p99 processing latency by 60%"
+      keywords: [Kafka, Go, event-driven, throughput, latency, distributed systems]
+    - text: "Led the migration from a single Postgres instance to a sharded, read-replica architecture, eliminating recurring write contention incidents during peak load"
+      keywords: [PostgreSQL, database sharding, scalability, replication]
+    - text: "Introduced structured tracing and metrics (OpenTelemetry, Prometheus, Grafana) across 12 services, cutting mean time to detect production issues from ~40 minutes to under 5"
+      keywords: [observability, OpenTelemetry, Prometheus, Grafana, incident response]
+    - text: "Designed a backpressure-aware retry and dead-letter-queue system for downstream consumers, removing the need for manual replay during partner outages"
+      keywords: [reliability, retry, dead-letter-queue, Kafka, resilience patterns]
+    - text: "Mentored 3 mid-level engineers through their first on-call rotations and led biweekly architecture review sessions for the platform team"
+      keywords: [mentoring, on-call, architecture review, technical leadership]
+    - text: "Migrated CI/CD from Jenkins to GitHub Actions with reusable workflows, reducing average deploy time from 25 minutes to 7"
+      keywords: [CI/CD, GitHub Actions, Jenkins, DevOps, deployment]
+
+- company: Northbridge Payments
+  role: Backend Engineer
+  start_date: "Jun 2019"
+  end_date: "Feb 2022"
+  description: "Built and maintained core transaction processing services for a payments platform operating under PCI DSS compliance requirements, focusing on correctness, auditability, and idempotency guarantees."
+  bullets:
+    - text: "Designed and implemented an idempotent transaction API used by all downstream payment flows, eliminating a class of double-charge incidents reported by merchants"
+      keywords: [Java, Spring Boot, idempotency, payments, API design]
+    - text: "Built an append-only audit logging system for all transaction state changes, satisfying PCI DSS traceability requirements ahead of the annual compliance audit"
+      keywords: [PCI DSS, audit logging, compliance, security]
+    - text: "Led the rollout of contract testing (Pact) between the payments service and 6 consuming teams, catching breaking API changes in CI before they reached staging"
+      keywords: [contract testing, Pact, API compatibility, testing]
+    - text: "Optimized the settlement batch job from a 3-hour nightly run to under 20 minutes by parallelizing reconciliation across merchant shards"
+      keywords: [performance optimization, batch processing, reconciliation]
+    - text: "Served as on-call lead for the payments team, authoring runbooks that cut average incident resolution time by half"
+      keywords: [on-call, incident management, runbooks, reliability]
+
+- company: Greenfield Retail
+  role: Software Engineer
+  start_date: "Aug 2017"
+  end_date: "May 2019"
+  description: "Contributed to the migration of a monolithic e-commerce platform into independently deployable services, working across backend APIs and customer-facing storefront features."
+  bullets:
+    - text: "Extracted the product catalog and search functionality from the monolith into a standalone Node.js service backed by Elasticsearch, cutting search response times by 70%"
+      keywords: [Node.js, Elasticsearch, microservices, search, migration]
+    - text: "Built React-based storefront features including faceted search, cart persistence, and a checkout flow redesign that reduced cart abandonment by 12%"
+      keywords: [React, frontend, e-commerce, checkout, UX]
+    - text: "Implemented a feature-flagging system enabling gradual rollouts, reducing the blast radius of the 6 major releases shipped during the migration"
+      keywords: [feature flags, deployment strategy, release management]
+    - text: "Cut average page load time by 40% across the storefront through API response caching and image delivery optimization"
+      keywords: [performance, caching, CDN, frontend optimization]
+
+- company: Cedar Labs
+  role: Junior Developer
+  start_date: "Jul 2015"
+  end_date: "Jul 2017"
+  description: "Built and maintained internal tools and small customer-facing features for a workflow automation product, working closely with senior engineers to learn production engineering practices."
+  bullets:
+    - text: "Built an internal admin dashboard for support staff to inspect and replay failed customer workflows, reducing average ticket resolution time by 30%"
+      keywords: [internal tools, PHP, JavaScript, admin dashboard]
+    - text: "Wrote the team's first suite of automated integration tests for the workflow engine, catching regressions before they reached production"
+      keywords: [testing, integration tests, quality assurance]
+    - text: "Maintained and extended a PHP/MySQL backend supporting the core workflow automation product"
+      keywords: [PHP, MySQL, backend]

@@ -33,7 +33,7 @@ python -m cli generate --job-description path/to/jd.txt
 python -m cli generate --job-description-text "We are looking for..."
 
 # Pass contact info at runtime (avoids storing sensitive data in files)
-python -m cli generate --email "you@example.com" --phone "+55 31 99999-9999"
+python -m cli generate --email "you@example.com" --phone "+55 99 99999-9999"
 
 # Show ATS match score against a job description
 python -m cli score --job-description path/to/jd.txt
@@ -68,6 +68,22 @@ Edit your career data in `data/`:
 - Skills ordered by relevance to target role
 - Experience bullets ranked and filtered by keyword match score
 - Both full names and acronyms included via skill aliases
+
+## Try It With the Example Data
+
+The `example/` folder contains a fictional career profile plus a sample job
+description, so you can try the CLI without setting up your own data first:
+
+```bash
+# Generate a generic resume from the example data
+python -m cli --data-dir example generate --output ./example-resume.pdf
+
+# Generate a resume tailored to the example job description
+python -m cli --data-dir example generate --job-description example/job-description.txt --output ./example-resume-tailored.pdf
+
+# Score the example profile against the example job description
+python -m cli --data-dir example score --job-description example/job-description.txt
+```
 
 ## Running Tests
 

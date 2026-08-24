@@ -11,3 +11,4 @@ run.sh
 run.ps1
 job-description.txt
 data/
+!example/job-description.txt

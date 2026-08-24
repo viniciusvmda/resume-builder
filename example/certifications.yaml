@@ -1,0 +1,8 @@
+- name: "AWS Certified Solutions Architect – Associate"
+  issuer: Amazon Web Services (AWS)
+- name: "AWS Certified Developer – Associate"
+  issuer: Amazon Web Services (AWS)
+- name: "KCNA: Kubernetes and Cloud Native Associate"
+  issuer: The Linux Foundation / CNCF
+- name: "Certified Kubernetes Administrator (CKA)"
+  issuer: The Linux Foundation / CNCF

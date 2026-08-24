@@ -1,0 +1,32 @@
+Senior Backend Engineer — Platform Team
+
+We're looking for a Senior Backend Engineer to help scale our real-time data
+platform. You'll own services that process high-volume event streams and work
+closely with product teams to turn ambiguous requirements into reliable,
+well-tested systems.
+
+Responsibilities:
+- Design and operate distributed, event-driven services handling millions of
+  events per day
+- Improve system observability (metrics, tracing, logging) and drive down
+  incident detection and resolution time
+- Lead architecture reviews and mentor mid-level engineers
+- Own reliability for critical services, including on-call rotations and
+  incident response
+- Partner with infrastructure teams to improve CI/CD pipelines and deployment
+  speed
+
+Requirements:
+- 5+ years of professional backend engineering experience
+- Strong experience with Go, Java, or Python in production systems
+- Hands-on experience with Kafka or similar event streaming platforms
+- Experience with PostgreSQL or another relational database at scale
+- Familiarity with Kubernetes, Docker, and cloud infrastructure (AWS or GCP)
+- Experience with observability tooling (Prometheus, Grafana, OpenTelemetry,
+  or similar)
+- Track record of mentoring engineers and leading technical initiatives
+
+Nice to have:
+- Experience with microservices migrations from a monolithic architecture
+- Experience with CI/CD tooling such as GitHub Actions or Jenkins
+- Background working in regulated or compliance-heavy environments

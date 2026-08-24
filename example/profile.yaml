@@ -1,0 +1,26 @@
+name: "Alex Supertramp Osbourne"
+email: null
+phone: null
+linkedin: "linkedin.com/in/alexsupertramposbourne"
+location: "Austin, USA"
+headline: "Senior Backend Engineer | Cloud Infrastructure | Distributed Systems | Platform Engineering"
+summary: >-
+  Senior Backend Engineer with 8+ years building and scaling distributed systems for
+  data-intensive products. Currently leading platform reliability efforts at Skyline
+  Analytics, designing event-driven services that process millions of records daily
+  while keeping the team's deploy frequency high and incident rate low.
+
+  Comfortable across the stack from API design to infrastructure: Go and Python
+  services, Kafka-based pipelines, PostgreSQL and Redis, deployed on Kubernetes
+  across multiple cloud providers. Strong advocate for observability-first design,
+  incremental migrations, and pairing with product teams to turn ambiguous
+  requirements into shippable systems.
+
+  Previously built payment processing services in a regulated fintech environment
+  (PCI DSS compliance, idempotent transaction handling, audit logging) and
+  led the migration of a monolithic e-commerce platform to a service-oriented
+  architecture, cutting average page load time by 40% and enabling independent
+  team deploys.
+
+  Enjoys mentoring engineers, running architecture reviews, and writing internal
+  tooling that removes toil from everyday development work.

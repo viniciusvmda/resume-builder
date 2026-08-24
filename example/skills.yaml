@@ -1,0 +1,152 @@
+- category: Programming Languages
+  skills:
+    - name: Go
+      years: 4
+      aliases: [Golang]
+    - name: Java
+      years: 6
+    - name: Python
+      years: 5
+    - name: JavaScript
+      years: 6
+      aliases: [JS]
+    - name: TypeScript
+      years: 4
+      aliases: [TS]
+    - name: SQL
+      years: 8
+    - name: PHP
+      years: 2
+
+- category: Frameworks & Runtimes
+  skills:
+    - name: Spring Boot
+      years: 4
+      aliases: [Spring, Spring Framework]
+    - name: Node.js
+      years: 5
+      aliases: [NodeJS, Node]
+    - name: React
+      years: 4
+      aliases: [React.js, ReactJS]
+    - name: Express.js
+      years: 3
+      aliases: [Express, ExpressJS]
+
+- category: Data & Messaging
+  skills:
+    - name: PostgreSQL
+      years: 7
+      aliases: [Postgres]
+    - name: MySQL
+      years: 4
+    - name: MongoDB
+      years: 2
+    - name: Redis
+      years: 5
+    - name: Elasticsearch
+      years: 2
+    - name: Apache Kafka
+      years: 4
+      aliases: [Kafka]
+
+- category: Cloud & Infrastructure
+  skills:
+    - name: Amazon Web Services (AWS)
+      years: 6
+      aliases: [AWS, Amazon Web Services]
+    - name: Google Cloud Platform (GCP)
+      years: 2
+      aliases: [GCP]
+    - name: Kubernetes
+      years: 4
+      aliases: [K8s]
+    - name: Docker
+      years: 6
+      aliases: [containers, containerization]
+    - name: Terraform
+      years: 4
+      aliases: [IaC, Infrastructure as Code]
+
+- category: DevOps & CI/CD
+  skills:
+    - name: CI/CD Pipelines
+      years: 7
+      aliases: [CI/CD, continuous integration, continuous deployment]
+    - name: GitHub Actions
+      years: 4
+    - name: Jenkins
+      years: 3
+    - name: Source Control Management
+      years: 8
+      aliases: [source control, SCM, Git, version control]
+
+- category: Architecture & Design
+  skills:
+    - name: Distributed Systems
+      years: 5
+    - name: Microservices
+      years: 5
+      aliases: [microservice architecture]
+    - name: Event-Driven Architecture
+      years: 4
+      aliases: [event-driven, EDA]
+    - name: REST APIs
+      years: 7
+      aliases: [REST, RESTful APIs]
+    - name: API Design
+      years: 6
+    - name: System Design
+      years: 5
+
+- category: Observability & Reliability
+  skills:
+    - name: OpenTelemetry
+      years: 3
+    - name: Prometheus
+      years: 3
+    - name: Grafana
+      years: 3
+      aliases: [Grafana dashboards, metrics visualization]
+    - name: Incident Response
+      years: 5
+      aliases: [on-call, incident management]
+
+- category: Testing
+  skills:
+    - name: Test-Driven Development (TDD)
+      years: 5
+      aliases: [TDD]
+    - name: Contract Testing
+      years: 2
+      aliases: [Pact]
+    - name: JUnit
+      years: 4
+    - name: Jest
+      years: 4
+    - name: Pytest
+      years: 3
+
+- category: Leadership & Practices
+  skills:
+    - name: Technical Mentoring
+      years: 4
+      aliases: [mentoring, coaching, mentorship]
+    - name: Architecture Review
+      years: 3
+    - name: Agile / Scrum
+      years: 8
+      aliases: [Agile, Scrum, agile methodologies]
+    - name: Cross-Team Collaboration
+      years: 6
+
+- category: Collaboration & Productivity Tools
+  skills:
+    - name: Slack
+      years: 6
+    - name: Jira
+      years: 6
+      aliases: [Jira Software, issue tracking]
+    - name: Confluence
+      years: 5
+      aliases: [Confluence wiki, documentation]
