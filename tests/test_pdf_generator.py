@@ -1,7 +1,7 @@
 """Tests for PDF generation."""
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -41,15 +41,27 @@ def sample_selected_resume():
                     description="Leading cloud infrastructure initiatives.",
                     keywords=["Azure", "Terraform", "cost optimization"],
                     bullets=[
-                        ExperienceBullet(text="Designed Azure landing zones for 50+ subscriptions"),
-                        ExperienceBullet(text="Implemented Terraform modules achieving 30% faster deployments"),
-                        ExperienceBullet(text="Led cost optimization saving $500K annually"),
+                        ExperienceBullet(
+                            text="Designed Azure landing zones for 50+ subscriptions"
+                        ),
+                        ExperienceBullet(
+                            text="Implemented Terraform modules achieving 30% faster deployments"
+                        ),
+                        ExperienceBullet(
+                            text="Led cost optimization saving $500K annually"
+                        ),
                     ],
                 ),
                 [
-                    ExperienceBullet(text="Designed Azure landing zones for 50+ subscriptions"),
-                    ExperienceBullet(text="Implemented Terraform modules achieving 30% faster deployments"),
-                    ExperienceBullet(text="Led cost optimization saving $500K annually"),
+                    ExperienceBullet(
+                        text="Designed Azure landing zones for 50+ subscriptions"
+                    ),
+                    ExperienceBullet(
+                        text="Implemented Terraform modules achieving 30% faster deployments"
+                    ),
+                    ExperienceBullet(
+                        text="Led cost optimization saving $500K annually"
+                    ),
                 ],
             ),
         ],
@@ -75,7 +87,13 @@ def sample_selected_resume():
                 end_year=2019,
             ),
         ],
-        section_order=["summary", "experience", "certifications", "education", "skills"],
+        section_order=[
+            "summary",
+            "experience",
+            "certifications",
+            "education",
+            "skills",
+        ],
     )
 
 

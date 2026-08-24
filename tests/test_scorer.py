@@ -1,8 +1,7 @@
 """Tests for the scoring engine."""
 
-import pytest
 
-from models import Certification, ExperienceBullet, Experience, Skill
+from models import Experience, ExperienceBullet, Skill
 from scorer import (
     extract_keywords,
     score_bullet,
@@ -127,4 +126,6 @@ class TestScoreExperience:
             keywords=["Azure", "Terraform", "Kubernetes"],
             bullets=[ExperienceBullet(text="Did some unrelated work")],
         )
-        assert score_experience(with_keywords, jd_keywords, jd) > score_experience(base, jd_keywords, jd)
+        assert score_experience(with_keywords, jd_keywords, jd) > score_experience(
+            base, jd_keywords, jd
+        )

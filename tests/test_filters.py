@@ -1,6 +1,5 @@
 """Tests for content filters."""
 
-import pytest
 
 from filters import apply_filters, filter_bullets
 from models import ExperienceBullet
@@ -8,7 +7,9 @@ from models import ExperienceBullet
 
 class TestApplyFilters:
     def test_detects_internal_libraries(self):
-        text = "Built CLI with Effect for typed error handling and Commander for parsing"
+        text = (
+            "Built CLI with Effect for typed error handling and Commander for parsing"
+        )
         result = apply_filters(text)
         assert len(result.violations) >= 2
         rules = [v.rule for v in result.violations]

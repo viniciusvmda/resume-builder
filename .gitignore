@@ -4,11 +4,13 @@ __pycache__/
 dist/
 build/
 .pytest_cache/
-output/*.pdf
+.coverage
+.ruff_cache/
 
 # Local testing
 run.sh
 run.ps1
 job-description.txt
 data/
+output/*.pdf
 !example/job-description.txt

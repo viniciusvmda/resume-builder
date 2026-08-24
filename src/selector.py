@@ -54,7 +54,9 @@ def select_generic(resume_data: ResumeData) -> SelectedResume:
     skill_categories = []
     for cat in resume_data.skill_categories:
         limited_skills = cat.skills[:MAX_SKILLS_PER_CATEGORY]
-        skill_categories.append(SkillCategory(category=cat.category, skills=limited_skills))
+        skill_categories.append(
+            SkillCategory(category=cat.category, skills=limited_skills)
+        )
 
     return SelectedResume(
         profile=resume_data.profile,
@@ -74,7 +76,9 @@ def select_targeted(
 ) -> SelectedResume:
     """Select and rank content based on job description scoring."""
     scored_skills: list[tuple[str, Skill, float]] = scored["scored_skills"]
-    scored_experiences: list[tuple[Experience, float, list[tuple[ExperienceBullet, float]]]] = scored["scored_experiences"]
+    scored_experiences: list[
+        tuple[Experience, float, list[tuple[ExperienceBullet, float]]]
+    ] = scored["scored_experiences"]
     scored_certs: list[tuple[Certification, float]] = scored["scored_certifications"]
     overall_score: float = scored["overall_score"]
 
@@ -82,13 +86,17 @@ def select_targeted(
     # When disabled, preserve YAML order from resume_data via scored_experiences.
     sorted_experiences = scored_experiences
     if rank_experiences:
-        sorted_experiences = sorted(scored_experiences, key=lambda x: x[1], reverse=True)
+        sorted_experiences = sorted(
+            scored_experiences, key=lambda x: x[1], reverse=True
+        )
 
     # Select top bullets per experience
     experiences = []
     for exp, _, bullet_scores in sorted_experiences:
         sorted_bullets = sorted(bullet_scores, key=lambda x: x[1], reverse=True)
-        top_bullets = [b for b, _ in sorted_bullets[:MAX_BULLETS_PER_EXPERIENCE_TARGETED]]
+        top_bullets = [
+            b for b, _ in sorted_bullets[:MAX_BULLETS_PER_EXPERIENCE_TARGETED]
+        ]
         # Restore original order for selected bullets
         original_order = {id(b): i for i, b in enumerate(exp.bullets)}
         top_bullets.sort(key=lambda b: original_order.get(id(b), 0))
@@ -106,7 +114,9 @@ def select_targeted(
         cat: max(s for _, s in skills) if skills else 0.0
         for cat, skills in skill_by_category.items()
     }
-    sorted_categories = sorted(category_scores.items(), key=lambda x: x[1], reverse=True)
+    sorted_categories = sorted(
+        category_scores.items(), key=lambda x: x[1], reverse=True
+    )
 
     skill_categories = []
     for cat_name, _ in sorted_categories:

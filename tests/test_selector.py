@@ -30,7 +30,14 @@ def sample_resume_data():
                 role="Cloud Architect",
                 start_date="Jan 2023",
                 end_date="Present",
-                keywords=["Azure", "Terraform", "Kubernetes", "leadership", "cost", "CI/CD"],
+                keywords=[
+                    "Azure",
+                    "Terraform",
+                    "Kubernetes",
+                    "leadership",
+                    "cost",
+                    "CI/CD",
+                ],
                 bullets=[
                     ExperienceBullet(text="Designed Azure landing zones"),
                     ExperienceBullet(text="Implemented Terraform modules"),
@@ -123,7 +130,10 @@ class TestSelectTargeted:
                 (
                     sample_resume_data.experiences[0],
                     0.8,
-                    [(b, 0.5 + i * 0.05) for i, b in enumerate(sample_resume_data.experiences[0].bullets)],
+                    [
+                        (b, 0.5 + i * 0.05)
+                        for i, b in enumerate(sample_resume_data.experiences[0].bullets)
+                    ],
                 ),
                 (
                     sample_resume_data.experiences[1],

@@ -1,39 +1,37 @@
 """ATS-friendly PDF generation using fpdf2."""
 
-import re
 from pathlib import Path
 
 from fpdf import FPDF
 
-
 # Unicode → ASCII replacements for PDF compatibility with core fonts
 _UNICODE_REPLACEMENTS = {
-    "\u2014": " - ",   # em dash
-    "\u2013": "-",     # en dash
-    "\u2018": "'",     # left single quote
-    "\u2019": "'",     # right single quote
-    "\u201c": '"',     # left double quote
-    "\u201d": '"',     # right double quote
-    "\u2026": "...",   # ellipsis
-    "\u2022": "-",     # bullet
-    "\u00a0": " ",     # non-breaking space
-    "\u2010": "-",     # hyphen
-    "\u2011": "-",     # non-breaking hyphen
-    "\u2012": "-",     # figure dash
-    "\u00b7": "-",     # middle dot
-    "\u2023": ">",     # triangular bullet
-    "\u2043": "-",     # hyphen bullet
-    "\u00e9": "e",     # é
-    "\u00e7": "c",     # ç
-    "\u00e3": "a",     # ã
-    "\u00f3": "o",     # ó
-    "\u00ed": "i",     # í
-    "\u00e1": "a",     # á
-    "\u00ea": "e",     # ê
-    "\u00f4": "o",     # ô
-    "\u00e0": "a",     # à
-    "\u00fc": "u",     # ü
-    "\u007e": "~",     # tilde
+    "\u2014": " - ",  # em dash
+    "\u2013": "-",  # en dash
+    "\u2018": "'",  # left single quote
+    "\u2019": "'",  # right single quote
+    "\u201c": '"',  # left double quote
+    "\u201d": '"',  # right double quote
+    "\u2026": "...",  # ellipsis
+    "\u2022": "-",  # bullet
+    "\u00a0": " ",  # non-breaking space
+    "\u2010": "-",  # hyphen
+    "\u2011": "-",  # non-breaking hyphen
+    "\u2012": "-",  # figure dash
+    "\u00b7": "-",  # middle dot
+    "\u2023": ">",  # triangular bullet
+    "\u2043": "-",  # hyphen bullet
+    "\u00e9": "e",  # é
+    "\u00e7": "c",  # ç
+    "\u00e3": "a",  # ã
+    "\u00f3": "o",  # ó
+    "\u00ed": "i",  # í
+    "\u00e1": "a",  # á
+    "\u00ea": "e",  # ê
+    "\u00f4": "o",  # ô
+    "\u00e0": "a",  # à
+    "\u00fc": "u",  # ü
+    "\u007e": "~",  # tilde
 }
 
 
@@ -44,6 +42,7 @@ def _sanitize_text(text: str) -> str:
     # Remove any remaining non-latin-1 characters
     text = text.encode("latin-1", errors="replace").decode("latin-1")
     return text
+
 
 from ats_rules import (
     BULLET_INDENT,
@@ -79,7 +78,9 @@ class ResumePDF(FPDF):
 
         # Name
         self.set_font(FONT_FAMILY, "B", FONT_SIZE_NAME)
-        self.cell(0, 8, _sanitize_text(profile.name), align="C", new_x="LMARGIN", new_y="NEXT")
+        self.cell(
+            0, 8, _sanitize_text(profile.name), align="C", new_x="LMARGIN", new_y="NEXT"
+        )
         self.ln(2)
 
         # Contact line
@@ -96,7 +97,14 @@ class ResumePDF(FPDF):
         if contact_parts:
             self.set_font(FONT_FAMILY, "", FONT_SIZE_SMALL)
             contact_line = "  |  ".join(contact_parts)
-            self.cell(0, LINE_HEIGHT, _sanitize_text(contact_line), align="C", new_x="LMARGIN", new_y="NEXT")
+            self.cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(contact_line),
+                align="C",
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
             self.ln(1)
 
         # Headline
@@ -110,7 +118,13 @@ class ResumePDF(FPDF):
     def _write_section_heading(self, title: str):
         """Write a section heading with a line separator."""
         self.set_font(FONT_FAMILY, "B", FONT_SIZE_HEADING)
-        self.cell(0, LINE_HEIGHT + 1, _sanitize_text(title.upper()), new_x="LMARGIN", new_y="NEXT")
+        self.cell(
+            0,
+            LINE_HEIGHT + 1,
+            _sanitize_text(title.upper()),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
         # Draw a thin line under the heading
         y = self.get_y()
         self.line(PAGE_MARGIN_LEFT, y, self.w - PAGE_MARGIN_RIGHT, y)
@@ -134,14 +148,22 @@ class ResumePDF(FPDF):
         for i, (exp, bullets) in enumerate(resume.experiences):
             # Company and role line
             self.set_font(FONT_FAMILY, "B", FONT_SIZE_SUBHEADING)
-            self.cell(0, LINE_HEIGHT, _sanitize_text(exp.role), new_x="LMARGIN", new_y="NEXT")
+            self.cell(
+                0, LINE_HEIGHT, _sanitize_text(exp.role), new_x="LMARGIN", new_y="NEXT"
+            )
 
             self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
             company_line = exp.company
             if exp.location:
                 company_line += f" | {exp.location}"
             company_line += f" | {exp.start_date} - {exp.end_date}"
-            self.cell(0, LINE_HEIGHT, _sanitize_text(company_line), new_x="LMARGIN", new_y="NEXT")
+            self.cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(company_line),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
             self.ln(1)
 
             # Description
@@ -203,7 +225,13 @@ class ResumePDF(FPDF):
             line = cert.name
             if cert.issuer:
                 line += f" - {cert.issuer}"
-            self.cell(0, LINE_HEIGHT, _sanitize_text(f"- {line}"), new_x="LMARGIN", new_y="NEXT")
+            self.cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(f"- {line}"),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
 
         self.ln(SECTION_SPACING)
 
@@ -220,7 +248,13 @@ class ResumePDF(FPDF):
             degree_line = edu.degree
             if edu.field:
                 degree_line += f", {edu.field}"
-            self.cell(0, LINE_HEIGHT, _sanitize_text(degree_line), new_x="LMARGIN", new_y="NEXT")
+            self.cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(degree_line),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
 
             # Institution and dates on second line
             self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
@@ -229,11 +263,19 @@ class ResumePDF(FPDF):
                 inst_line += f" ({edu.start_year} - {edu.end_year})"
             elif edu.end_year:
                 inst_line += f" ({edu.end_year})"
-            self.cell(0, LINE_HEIGHT, _sanitize_text(inst_line), new_x="LMARGIN", new_y="NEXT")
+            self.cell(
+                0, LINE_HEIGHT, _sanitize_text(inst_line), new_x="LMARGIN", new_y="NEXT"
+            )
 
             if edu.notes:
                 self.set_font(FONT_FAMILY, "I", FONT_SIZE_SMALL)
-                self.cell(0, LINE_HEIGHT, _sanitize_text(edu.notes), new_x="LMARGIN", new_y="NEXT")
+                self.cell(
+                    0,
+                    LINE_HEIGHT,
+                    _sanitize_text(edu.notes),
+                    new_x="LMARGIN",
+                    new_y="NEXT",
+                )
                 self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
 
             self.ln(1)
