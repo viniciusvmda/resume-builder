@@ -143,10 +143,17 @@ def generate(
         if top_skills:
             click.echo("\nTop Matching Skills:")
             for cat, skill, s in top_skills:
-                click.echo(f"  [{min(s, 1.0):.0%}] {skill.name} ({cat})")
+                click.echo(f"  [{s:.0%}] {skill.name} ({cat})")
+
+        cat_scores = scored["category_scores"]
+        click.echo("\nScore Breakdown:")
+        click.echo(f"  Skills:            {cat_scores['skills']:.0%}")
+        click.echo(f"  Experience:        {cat_scores['experience']:.0%}")
+        click.echo(f"  Certifications:    {cat_scores['certifications']:.0%}")
+        click.echo(f"  Keyword Coverage:  {cat_scores['keyword_coverage']:.0%}")
 
         if selected.match_score < 0.5:
-            _print_low_score_recommendations(scored, resume_data)
+            _print_low_score_recommendations(scored)
     else:
         click.echo(
             "\n(No ATS score — provide a job description with -jd to get a match score)"
@@ -205,8 +212,7 @@ def score(ctx, job_description: Path | None, job_description_text: str | None):
     top_skills = sorted(scored["scored_skills"], key=lambda x: x[2], reverse=True)[:10]
     for cat, skill, s in top_skills:
         if s > 0:
-            display_score = min(s, 1.0)
-            click.echo(f"  [{display_score:.0%}] {skill.name} ({cat})")
+            click.echo(f"  [{s:.0%}] {skill.name} ({cat})")
 
     # Show experience ranking
     click.echo("\nExperience Relevance Ranking:")
@@ -320,48 +326,31 @@ def _apply_content_filters(
     )
 
 
-def _print_low_score_recommendations(scored: dict, resume_data) -> None:
+def _print_low_score_recommendations(scored: dict) -> None:
     """Print actionable recommendations when ATS score is low."""
     click.echo(
         click.style("\n⚠  Low ATS match. Recommendations:", fg="yellow", bold=True)
     )
 
-    # Find missing keywords (JD keywords not matched by any skill or bullet)
-    jd_keywords = scored["jd_keywords"]
-    all_skill_names = set()
-    for cat in resume_data.skill_categories:
-        for skill in cat.skills:
-            all_skill_names.add(skill.name.lower())
-            for alias in skill.aliases:
-                all_skill_names.add(alias.lower())
+    explanation = scored["explanation"]
+    missing_required = explanation["missing_required"]
+    missing_preferred = explanation["missing_preferred"]
 
-    all_resume_text = " ".join(
-        filter(
-            None,
-            [
-                resume_data.profile.headline,
-                resume_data.profile.summary,
-                *[exp.role for exp in resume_data.experiences],
-                *[exp.description or "" for exp in resume_data.experiences],
-                *[b.text for exp in resume_data.experiences for b in exp.bullets],
-            ],
-        )
-    ).lower()
-
-    missing_keywords = []
-    for kw in jd_keywords[:25]:
-        kw_lower = kw.lower()
-        in_skills = any(kw_lower in name for name in all_skill_names)
-        in_bullets = kw_lower in all_resume_text
-        if not in_skills and not in_bullets:
-            missing_keywords.append(kw)
-
-    if missing_keywords:
-        click.echo("\n  Missing JD keywords not found in your data:")
-        click.echo(click.style(f"    {', '.join(missing_keywords[:15])}", fg="red"))
+    if missing_required:
+        click.echo("\n  Missing REQUIRED JD keywords not found in your data:")
+        click.echo(click.style(f"    {', '.join(missing_required[:15])}", fg="red"))
         click.echo(
             "    → Add these to skills.yaml (with aliases) or update experience bullets"
         )
+
+    if missing_preferred:
+        click.echo("\n  Missing preferred JD keywords:")
+        click.echo(click.style(f"    {', '.join(missing_preferred[:15])}", fg="yellow"))
+
+    negated = explanation["negated_matches_discounted"]
+    if negated:
+        click.echo("\n  Keywords matched but discounted (JD phrased them negatively):")
+        click.echo(click.style(f"    {', '.join(negated[:15])}", fg="yellow"))
 
     # Find weakly matched skills (in JD but scored low)
     weak_skills = [
