@@ -748,6 +748,32 @@ def _mean(values) -> float:
     return sum(values) / len(values) if values else 0.0
 
 
+# Matched-item units needed to fully saturate a category score. Chosen so a
+# handful of genuinely relevant matches maxes out the category, regardless
+# of how many total entries the candidate's resume happens to list.
+SKILLS_CATEGORY_SATURATION = 8.0
+CERTIFICATIONS_CATEGORY_SATURATION = 2.0
+
+
+def _saturating_category_score(scores, saturation: float) -> float:
+    """Aggregate item scores into a category score via a capped sum, not a
+    mean over the candidate's full inventory.
+
+    A flat mean over ALL of a candidate's skills/certifications is anchored
+    to the candidate's own list length rather than the JD — a broad
+    skillset with many entries irrelevant to this specific JD gets
+    mathematically punished for its breadth (5 real matches out of 92 total
+    skills means ~5%, even though every skill the JD actually asked for was
+    matched). Real ATS coverage metrics anchor to the JD's requirements, not
+    the resume's inventory size; this mirrors that by rewarding the matches
+    found, capped at a fixed ceiling, independent of total entry count.
+    """
+    values = list(scores)
+    if not values or saturation <= 0:
+        return 0.0
+    return min(sum(values) / saturation, 1.0)
+
+
 def _all_resume_text(resume_data: ResumeData) -> str:
     parts = [resume_data.profile.headline, resume_data.profile.summary]
     for exp in resume_data.experiences:
@@ -808,9 +834,13 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
         )
 
     category_scores = {
-        "skills": _mean(s for _, _, s in scored_skills),
+        "skills": _saturating_category_score(
+            (s for _, _, s in scored_skills), SKILLS_CATEGORY_SATURATION
+        ),
         "experience": _mean(s for _, s, _ in scored_experiences),
-        "certifications": _mean(s for _, s in scored_certs),
+        "certifications": _saturating_category_score(
+            (s for _, s in scored_certs), CERTIFICATIONS_CATEGORY_SATURATION
+        ),
         "keyword_coverage": keyword_coverage,
     }
 

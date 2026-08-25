@@ -465,6 +465,48 @@ class TestScoreResume:
             assert 0.0 <= s <= 1.0
 
 
+class TestSkillsCategoryScore:
+    """Regression: category_scores['skills'] must not be diluted by a large
+    candidate skill inventory that's mostly irrelevant to this specific JD —
+    a flat mean over ALL skills punishes breadth (e.g. 2 real matches out of
+    92 skills reads as ~2%, even though every JD-relevant skill was found)."""
+
+    def test_not_diluted_by_irrelevant_skills_in_inventory(self):
+        jd = "We need someone with Kafka and Go experience."
+        relevant_skills = [Skill(name="Kafka"), Skill(name="Go")]
+        irrelevant_skills = [Skill(name=f"Irrelevant Skill {i}") for i in range(50)]
+        resume_data = ResumeData(
+            profile=Profile(name="Jane Doe"),
+            skill_categories=[
+                SkillCategory(category="Misc", skills=relevant_skills + irrelevant_skills)
+            ],
+        )
+        scored = score_resume(resume_data, jd)
+        # A flat mean would put this around 2/52 ≈ 4%.
+        assert scored["category_scores"]["skills"] > 0.2
+
+    def test_score_unaffected_by_inventory_size(self):
+        jd = "We need someone with Kafka and Go experience."
+        relevant_skills = [Skill(name="Kafka"), Skill(name="Go")]
+        small = ResumeData(
+            profile=Profile(name="Jane Doe"),
+            skill_categories=[SkillCategory(category="Misc", skills=relevant_skills)],
+        )
+        large = ResumeData(
+            profile=Profile(name="Jane Doe"),
+            skill_categories=[
+                SkillCategory(
+                    category="Misc",
+                    skills=relevant_skills
+                    + [Skill(name=f"Irrelevant {i}") for i in range(100)],
+                )
+            ],
+        )
+        small_score = score_resume(small, jd)["category_scores"]["skills"]
+        large_score = score_resume(large, jd)["category_scores"]["skills"]
+        assert small_score == large_score
+
+
 class TestScoreBoundsProperty:
     """Regression backstop: every score_* function must stay within [0, 1]
     across a matrix of edge-case inputs."""
