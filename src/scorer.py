@@ -570,6 +570,47 @@ def score_skill(
     return min(best_score * years_multiplier, 1.0)
 
 
+# Weighted-match-units a single item (bullet/role/cert) needs to hit full
+# score. E.g. 2-3 required-weight (1.0) keyword hits, or a proportionally
+# larger number of lower-weight ones, saturates to 1.0.
+ITEM_SATURATION = 2.5
+
+
+def score_keyword_relevance(
+    text: str,
+    keywords: list[str],
+    jd_classification: dict[str, set[str]] | None = None,
+    saturation: float = ITEM_SATURATION,
+) -> float:
+    """Score how strongly `text` matches JD keywords via a capped weighted
+    sum, not a ratio.
+
+    score_keyword_match (matched weight / total weight of the given keyword
+    list) is a recall metric: appropriate when the text is large enough to
+    plausibly cover a real fraction of the keyword list (e.g. the whole
+    resume, for keyword_coverage). Applied to a single short item (a bullet,
+    a role title, a cert name) against a large keyword list, that ratio is
+    structurally capped low regardless of match quality — and scoping the
+    list to the item itself just moves the unfairness to comparisons between
+    items with different footprints (a narrow/generic item's smaller
+    denominator makes it easier to satisfy than a broad/specific one).
+
+    This function has no such denominator: unmatched keywords simply don't
+    contribute. Every item is compared on the same fixed scale, so an item
+    that hits more/higher-value keywords always scores at least as well as
+    one that hits fewer, regardless of either item's own keyword footprint.
+    """
+    if not keywords or saturation <= 0:
+        return 0.0
+    details = _match_keywords(text, keywords, jd_classification)
+    matched_weight = sum(
+        _keyword_weight(d.keyword.lower(), jd_classification) * d.score
+        for d in details
+        if d.match_type in ("exact", "fuzzy")
+    )
+    return min(matched_weight / saturation, 1.0)
+
+
 def score_bullet(
     bullet: ExperienceBullet,
     jd_keywords: list[str],
@@ -583,7 +624,7 @@ def score_bullet(
         tfidf_score = score_text_similarity_cached(bullet.text, jd_vector, vectorizer)
     else:
         tfidf_score = score_text_similarity(bullet.text, job_description)
-    keyword_score = score_keyword_match(bullet.text, jd_keywords, jd_classification)
+    keyword_score = score_keyword_relevance(bullet.text, jd_keywords, jd_classification)
 
     return (tfidf_score * 0.4) + (keyword_score * 0.6)
 
@@ -598,7 +639,7 @@ def _score_experience_detailed(
 ) -> tuple[float, list[tuple[ExperienceBullet, float]]]:
     """Score an experience entry, returning both its scalar score and the
     per-bullet scores computed along the way (avoids re-scoring bullets twice)."""
-    role_score = score_keyword_match(experience.role, jd_keywords, jd_classification)
+    role_score = score_keyword_relevance(experience.role, jd_keywords, jd_classification)
 
     desc_score = 0.0
     if experience.description:
@@ -645,7 +686,7 @@ def score_certification(
     jd_classification: dict[str, set[str]] | None = None,
 ) -> float:
     """Score a certification against the job description. Always returns [0, 1]."""
-    return score_keyword_match(cert.name, jd_keywords, jd_classification)
+    return score_keyword_relevance(cert.name, jd_keywords, jd_classification)
 
 
 def _mean(values) -> float:

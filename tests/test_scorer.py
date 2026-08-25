@@ -20,6 +20,7 @@ from scorer import (
     score_certification,
     score_experience,
     score_keyword_match,
+    score_keyword_relevance,
     score_resume,
     score_skill,
     score_text_similarity,
@@ -215,6 +216,40 @@ class TestFuzzyMatchOk:
         assert matched is False
 
 
+class TestScoreKeywordRelevance:
+    def test_empty_keywords_returns_zero(self):
+        assert score_keyword_relevance("some text", []) == 0.0
+
+    def test_no_match_returns_zero(self):
+        score = score_keyword_relevance("I enjoy cooking", ["azure", "kubernetes"])
+        assert score == 0.0
+
+    def test_saturates_at_one(self):
+        text = "Azure Terraform Kubernetes Docker AWS GCP Prometheus Grafana"
+        keywords = ["azure", "terraform", "kubernetes", "docker", "aws", "gcp"]
+        score = score_keyword_relevance(text, keywords)
+        assert score == 1.0
+
+    def test_more_high_value_matches_scores_higher(self):
+        keywords = ["azure", "terraform", "kubernetes"]
+        rich = score_keyword_relevance("Azure Terraform Kubernetes expert", keywords)
+        thin = score_keyword_relevance("Azure specialist", keywords)
+        assert rich > thin
+
+    def test_score_independent_of_unrelated_keyword_pool_size(self):
+        # A text's score for the keywords it actually matches must not
+        # change just because the candidate keyword list also contains many
+        # unrelated terms (regression: this is what caused a broad,
+        # specific experience to score *worse* than a narrow generic one
+        # under a per-item ratio/denominator design).
+        keywords_small = ["kafka", "go"]
+        keywords_large = keywords_small + [f"unrelated{i}" for i in range(50)]
+        text = "Built Kafka consumers in Go"
+        assert score_keyword_relevance(text, keywords_small) == score_keyword_relevance(
+            text, keywords_large
+        )
+
+
 class TestScoreBullet:
     def test_relevant_bullet_scores_high(self):
         bullet = ExperienceBullet(
@@ -278,6 +313,38 @@ class TestScoreExperience:
         )
         score = score_experience(exp, jd_keywords, jd)
         assert 0.0 <= score <= 1.0
+
+    def test_broad_specific_match_outranks_narrow_generic_match(self):
+        # Regression: a per-item denominator scoped to "keywords found in
+        # this experience" made a narrow, generic-titled experience easier
+        # to satisfy than one that genuinely covers many specific JD terms.
+        jd = (
+            "Senior Backend Engineer. Requirements: Go, Kafka, PostgreSQL, "
+            "Kubernetes, Docker, Prometheus, Grafana, mentoring engineers."
+        )
+        jd_keywords = [
+            "go", "kafka", "postgresql", "kubernetes", "docker",
+            "prometheus", "grafana", "mentoring", "engineers", "backend",
+        ]
+        broad_specific = Experience(
+            company="Acme",
+            role="Senior Backend Engineer",
+            start_date="Jan 2020",
+            bullets=[
+                ExperienceBullet(text="Built Kafka and Go services on Kubernetes with Docker"),
+                ExperienceBullet(text="Ran PostgreSQL at scale and set up Prometheus and Grafana"),
+                ExperienceBullet(text="Mentored engineers across the backend team"),
+            ],
+        )
+        narrow_generic = Experience(
+            company="Acme",
+            role="Backend Engineer",
+            start_date="Jan 2020",
+            bullets=[ExperienceBullet(text="Worked on backend systems")],
+        )
+        assert score_experience(broad_specific, jd_keywords, jd) > score_experience(
+            narrow_generic, jd_keywords, jd
+        )
 
 
 class TestScoreCertification:
