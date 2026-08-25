@@ -1,6 +1,5 @@
 """Tests for content filters."""
 
-
 from filters import apply_filters, filter_bullets
 from models import ExperienceBullet
 
