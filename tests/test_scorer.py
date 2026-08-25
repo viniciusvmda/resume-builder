@@ -478,7 +478,9 @@ class TestSkillsCategoryScore:
         resume_data = ResumeData(
             profile=Profile(name="Jane Doe"),
             skill_categories=[
-                SkillCategory(category="Misc", skills=relevant_skills + irrelevant_skills)
+                SkillCategory(
+                    category="Misc", skills=relevant_skills + irrelevant_skills
+                )
             ],
         )
         scored = score_resume(resume_data, jd)
