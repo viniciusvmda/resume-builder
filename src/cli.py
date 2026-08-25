@@ -362,9 +362,7 @@ def _print_low_score_recommendations(scored: dict) -> None:
         click.echo("\n  Weak skill matches (present but low relevance):")
         for name, s in sorted(weak_skills, key=lambda x: x[1]):
             click.echo(click.style(f"    {name}", fg="yellow") + f" ({s:.0%})")
-        click.echo(
-            "    → Add keyword aliases or strengthen related experience bullets"
-        )
+        click.echo("    → Add keyword aliases or strengthen related experience bullets")
 
     # General tips
     click.echo("\n  General tips:")

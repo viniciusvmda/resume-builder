@@ -169,7 +169,9 @@ class YearsRequirement(NamedTuple):
     max_years: float | None
 
 
-def _preceding_tokens(text_lower: str, match_start: int, window: int = NEGATION_WINDOW) -> list[str]:
+def _preceding_tokens(
+    text_lower: str, match_start: int, window: int = NEGATION_WINDOW
+) -> list[str]:
     """Return up to `window` word tokens immediately before `match_start`."""
     before = text_lower[:match_start]
     tokens = re.findall(r"[a-z0-9']+", before)
@@ -294,7 +296,9 @@ _HEADER_GENERIC_RE = re.compile(r"^[A-Za-z][A-Za-z /]{0,40}:\s*$")
 _BULLET_PREFIX_RE = re.compile(r"^[-•*]\s*")
 
 
-def classify_jd_keywords(job_description: str, keywords: list[str]) -> dict[str, set[str]]:
+def classify_jd_keywords(
+    job_description: str, keywords: list[str]
+) -> dict[str, set[str]]:
     """Classify JD keywords as required / preferred / general.
 
     Two signals are combined: an inline cue phrase in the same sentence
@@ -327,7 +331,9 @@ def classify_jd_keywords(job_description: str, keywords: list[str]) -> dict[str,
             if not sentence_lower:
                 continue
             is_required = any(cue in sentence_lower for cue in CUE_PHRASES["required"])
-            is_preferred = any(cue in sentence_lower for cue in CUE_PHRASES["preferred"])
+            is_preferred = any(
+                cue in sentence_lower for cue in CUE_PHRASES["preferred"]
+            )
             if is_required:
                 effective_state = "required"
             elif is_preferred:
@@ -346,7 +352,9 @@ def classify_jd_keywords(job_description: str, keywords: list[str]) -> dict[str,
     return {"required": required, "preferred": preferred, "general": general}
 
 
-def _keyword_weight(kw_lower: str, jd_classification: dict[str, set[str]] | None) -> float:
+def _keyword_weight(
+    kw_lower: str, jd_classification: dict[str, set[str]] | None
+) -> float:
     if not jd_classification:
         return 1.0
     required = {k.lower() for k in jd_classification.get("required", set())}
@@ -358,7 +366,18 @@ def _keyword_weight(kw_lower: str, jd_classification: dict[str, set[str]] | None
     return GENERAL_WEIGHT
 
 
-_YEARS_FILLER = {"of", "in", "with", "and", "the", "years", "year", "experience", "a", "as"}
+_YEARS_FILLER = {
+    "of",
+    "in",
+    "with",
+    "and",
+    "the",
+    "years",
+    "year",
+    "experience",
+    "a",
+    "as",
+}
 _YEARS_PATTERN = re.compile(r"(\d+)(?:\s*-\s*(\d+))?\+?\s*years?", re.IGNORECASE)
 _WORD_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9+#./\-]*")
 _SENTENCE_BOUNDARY = re.compile(r"[.\n•;]")
@@ -380,25 +399,39 @@ def extract_years_requirements(job_description: str) -> list[YearsRequirement]:
         # Clip the search window to the current sentence so a requirement
         # doesn't bleed its "years" into an unrelated skill mentioned next.
         next_boundary = _SENTENCE_BOUNDARY.search(job_description, m.end())
-        after_end = next_boundary.start() if next_boundary else min(len(job_description), m.end() + 60)
+        after_end = (
+            next_boundary.start()
+            if next_boundary
+            else min(len(job_description), m.end() + 60)
+        )
         after = job_description[m.end() : after_end]
         after_words = _WORD_PATTERN.findall(after)
         hint_words = [w for w in after_words if w.lower() not in _YEARS_FILLER][:3]
 
         if not hint_words:
-            prev_boundaries = list(_SENTENCE_BOUNDARY.finditer(job_description, 0, m.start()))
-            before_start = prev_boundaries[-1].end() if prev_boundaries else max(0, m.start() - 40)
+            prev_boundaries = list(
+                _SENTENCE_BOUNDARY.finditer(job_description, 0, m.start())
+            )
+            before_start = (
+                prev_boundaries[-1].end() if prev_boundaries else max(0, m.start() - 40)
+            )
             before = job_description[before_start : m.start()]
             before_words = _WORD_PATTERN.findall(before)
-            hint_words = [w for w in before_words if w.lower() not in _YEARS_FILLER][-3:]
+            hint_words = [w for w in before_words if w.lower() not in _YEARS_FILLER][
+                -3:
+            ]
 
         if hint_words:
-            requirements.append(YearsRequirement(" ".join(hint_words), min_years, max_years))
+            requirements.append(
+                YearsRequirement(" ".join(hint_words), min_years, max_years)
+            )
 
     return requirements
 
 
-def score_years_requirement(skill: Skill, requirements: list[YearsRequirement] | None) -> float:
+def score_years_requirement(
+    skill: Skill, requirements: list[YearsRequirement] | None
+) -> float:
     """Multiplier in [0,1] penalizing a skill whose years fall short of a JD requirement.
 
     Returns 1.0 (neutral) when no requirement matches this skill.
@@ -411,7 +444,9 @@ def score_years_requirement(skill: Skill, requirements: list[YearsRequirement] |
         hint_lower = req.skill_hint.lower()
         matched = any(name in hint_lower or hint_lower in name for name in names)
         if not matched:
-            matched = any(fuzzy_match_ok(name, hint_lower, use_partial=True)[0] for name in names)
+            matched = any(
+                fuzzy_match_ok(name, hint_lower, use_partial=True)[0] for name in names
+            )
         if not matched:
             continue
 
@@ -565,7 +600,9 @@ def score_skill(
             break
 
     years_multiplier = (
-        score_years_requirement(skill, years_requirements) if years_requirements else 1.0
+        score_years_requirement(skill, years_requirements)
+        if years_requirements
+        else 1.0
     )
     return min(best_score * years_multiplier, 1.0)
 
@@ -639,17 +676,31 @@ def _score_experience_detailed(
 ) -> tuple[float, list[tuple[ExperienceBullet, float]]]:
     """Score an experience entry, returning both its scalar score and the
     per-bullet scores computed along the way (avoids re-scoring bullets twice)."""
-    role_score = score_keyword_relevance(experience.role, jd_keywords, jd_classification)
+    role_score = score_keyword_relevance(
+        experience.role, jd_keywords, jd_classification
+    )
 
     desc_score = 0.0
     if experience.description:
         if jd_vector is not None and vectorizer is not None:
-            desc_score = score_text_similarity_cached(experience.description, jd_vector, vectorizer)
+            desc_score = score_text_similarity_cached(
+                experience.description, jd_vector, vectorizer
+            )
         else:
             desc_score = score_text_similarity(experience.description, job_description)
 
     bullet_scores = [
-        (b, score_bullet(b, jd_keywords, job_description, jd_vector, vectorizer, jd_classification))
+        (
+            b,
+            score_bullet(
+                b,
+                jd_keywords,
+                job_description,
+                jd_vector,
+                vectorizer,
+                jd_classification,
+            ),
+        )
         for b in experience.bullets
     ]
     avg_bullet_score = (
@@ -665,7 +716,10 @@ def _score_experience_detailed(
 
     # Weights sum to 1.0 by construction, plus a defense-in-depth clamp.
     score = min(
-        (role_score * 0.3) + (desc_score * 0.2) + (avg_bullet_score * 0.4) + (keyword_bonus * 0.1),
+        (role_score * 0.3)
+        + (desc_score * 0.2)
+        + (avg_bullet_score * 0.4)
+        + (keyword_bonus * 0.1),
         1.0,
     )
     return score, bullet_scores
@@ -749,7 +803,9 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
     if required_keywords:
         keyword_coverage = score_keyword_match(all_resume_text, required_keywords)
     else:
-        keyword_coverage = score_keyword_match(all_resume_text, jd_keywords, jd_classification)
+        keyword_coverage = score_keyword_match(
+            all_resume_text, jd_keywords, jd_classification
+        )
 
     category_scores = {
         "skills": _mean(s for _, _, s in scored_skills),
@@ -762,19 +818,23 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
         category_scores[key] * weight for key, weight in OVERALL_SCORE_WEIGHTS.items()
     )
 
-    keyword_details = score_keyword_match_detailed(all_resume_text, jd_keywords, jd_classification)
+    keyword_details = score_keyword_match_detailed(
+        all_resume_text, jd_keywords, jd_classification
+    )
     required_lower = {k.lower() for k in jd_classification["required"]}
     preferred_lower = {k.lower() for k in jd_classification["preferred"]}
     explanation = {
         "matched_required": [
             d.keyword
             for d in keyword_details
-            if d.match_type in ("exact", "fuzzy") and d.keyword.lower() in required_lower
+            if d.match_type in ("exact", "fuzzy")
+            and d.keyword.lower() in required_lower
         ],
         "matched_preferred": [
             d.keyword
             for d in keyword_details
-            if d.match_type in ("exact", "fuzzy") and d.keyword.lower() in preferred_lower
+            if d.match_type in ("exact", "fuzzy")
+            and d.keyword.lower() in preferred_lower
         ],
         "missing_required": [
             d.keyword

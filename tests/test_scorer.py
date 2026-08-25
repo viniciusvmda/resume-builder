@@ -108,7 +108,9 @@ class TestScoreKeywordMatch:
 
     def test_required_keyword_weighted_higher_than_preferred(self):
         jd_classification = {"required": {"python"}, "preferred": {"java"}}
-        score_required_only = score_keyword_match("Python", ["python"], jd_classification)
+        score_required_only = score_keyword_match(
+            "Python", ["python"], jd_classification
+        )
         score_preferred_only = score_keyword_match("Java", ["java"], jd_classification)
         assert score_required_only == 1.0
         assert score_preferred_only == 1.0
@@ -270,7 +272,9 @@ class TestScoreBullet:
         assert score < 0.2
 
     def test_score_bullet_never_exceeds_one(self):
-        bullet = ExperienceBullet(text="Azure Terraform Kubernetes Azure Terraform Kubernetes")
+        bullet = ExperienceBullet(
+            text="Azure Terraform Kubernetes Azure Terraform Kubernetes"
+        )
         jd = "Cloud architect with Azure, Terraform, and Kubernetes"
         jd_keywords = ["azure", "terraform", "kubernetes"]
         score = score_bullet(bullet, jd_keywords, jd)
@@ -308,7 +312,9 @@ class TestScoreExperience:
             description="Cloud architect with Azure, Terraform, and Kubernetes",
             keywords=["Azure", "Terraform", "Kubernetes"],
             bullets=[
-                ExperienceBullet(text="Cloud architect with Azure, Terraform, and Kubernetes")
+                ExperienceBullet(
+                    text="Cloud architect with Azure, Terraform, and Kubernetes"
+                )
             ],
         )
         score = score_experience(exp, jd_keywords, jd)
@@ -323,16 +329,28 @@ class TestScoreExperience:
             "Kubernetes, Docker, Prometheus, Grafana, mentoring engineers."
         )
         jd_keywords = [
-            "go", "kafka", "postgresql", "kubernetes", "docker",
-            "prometheus", "grafana", "mentoring", "engineers", "backend",
+            "go",
+            "kafka",
+            "postgresql",
+            "kubernetes",
+            "docker",
+            "prometheus",
+            "grafana",
+            "mentoring",
+            "engineers",
+            "backend",
         ]
         broad_specific = Experience(
             company="Acme",
             role="Senior Backend Engineer",
             start_date="Jan 2020",
             bullets=[
-                ExperienceBullet(text="Built Kafka and Go services on Kubernetes with Docker"),
-                ExperienceBullet(text="Ran PostgreSQL at scale and set up Prometheus and Grafana"),
+                ExperienceBullet(
+                    text="Built Kafka and Go services on Kubernetes with Docker"
+                ),
+                ExperienceBullet(
+                    text="Ran PostgreSQL at scale and set up Prometheus and Grafana"
+                ),
                 ExperienceBullet(text="Mentored engineers across the backend team"),
             ],
         )
@@ -350,7 +368,9 @@ class TestScoreExperience:
 class TestScoreCertification:
     def test_cert_name_matches_keyword(self):
         cert = Certification(name="AWS Certified Solutions Architect")
-        score = score_certification(cert, ["aws", "architect"], "AWS Solutions Architect role")
+        score = score_certification(
+            cert, ["aws", "architect"], "AWS Solutions Architect role"
+        )
         assert score > 0.0
 
     def test_cert_no_match(self):
@@ -360,7 +380,9 @@ class TestScoreCertification:
 
     def test_cert_bounded(self):
         cert = Certification(name="AWS Certified Solutions Architect")
-        score = score_certification(cert, ["aws", "certified", "solutions", "architect"], "x")
+        score = score_certification(
+            cert, ["aws", "certified", "solutions", "architect"], "x"
+        )
         assert 0.0 <= score <= 1.0
 
 
@@ -425,7 +447,9 @@ class TestScoreResume:
         resume_data = _make_resume_data()
         jd = "Cloud architect with Azure, Terraform, and Kubernetes required."
         scored = score_resume(resume_data, jd)
-        assert "kubernetes" in [k.lower() for k in scored["explanation"]["missing_required"]]
+        assert "kubernetes" in [
+            k.lower() for k in scored["explanation"]["missing_required"]
+        ]
 
     def test_all_scores_within_bounds(self):
         resume_data = _make_resume_data()
