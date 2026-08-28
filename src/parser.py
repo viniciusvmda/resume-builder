@@ -5,11 +5,13 @@ from pathlib import Path
 import yaml
 
 from models import (
+    Bullet,
     Certification,
     Education,
     Experience,
     ExperienceBullet,
     Profile,
+    Project,
     ResumeData,
     Skill,
     SkillCategory,
@@ -42,6 +44,27 @@ def load_experiences(data_dir: Path) -> list[Experience]:
         exp["bullets"] = bullets
         experiences.append(Experience(**exp))
     return experiences
+
+
+def load_projects(data_dir: Path) -> list[Project]:
+    """Load projects.yaml. Optional file — returns [] if absent."""
+    path = data_dir / "projects.yaml"
+    if not path.exists():
+        return []
+    data = load_yaml(path) or []
+    projects = []
+    for proj in data:
+        bullets = []
+        for b in proj.get("bullets", []):
+            if isinstance(b, str):
+                bullets.append(Bullet(text=b))
+            else:
+                bullets.append(Bullet(**b))
+        proj["bullets"] = bullets
+        proj["start_year"] = str(proj["start_year"])
+        proj["end_year"] = str(proj.get("end_year", "Present"))
+        projects.append(Project(**proj))
+    return projects
 
 
 def load_skills(data_dir: Path) -> list[SkillCategory]:
@@ -78,6 +101,7 @@ def load_resume_data(data_dir: Path) -> ResumeData:
     return ResumeData(
         profile=load_profile(data_dir),
         experiences=load_experiences(data_dir),
+        projects=load_projects(data_dir),
         skill_categories=load_skills(data_dir),
         certifications=load_certifications(data_dir),
         education=load_education(data_dir),

@@ -3,15 +3,18 @@
 import pytest
 
 from models import (
+    Bullet,
     Certification,
     Experience,
     ExperienceBullet,
     Profile,
+    Project,
     ResumeData,
     Skill,
     SkillCategory,
 )
 from scorer import (
+    OVERALL_SCORE_WEIGHTS_WITH_PROJECTS,
     classify_jd_keywords,
     extract_keywords,
     extract_years_requirements,
@@ -21,6 +24,7 @@ from scorer import (
     score_experience,
     score_keyword_match,
     score_keyword_relevance,
+    score_project,
     score_resume,
     score_skill,
     score_text_similarity,
@@ -365,6 +369,64 @@ class TestScoreExperience:
         )
 
 
+class TestScoreProject:
+    def test_project_keywords_boost_score(self):
+        jd = "Cloud architect with Azure, Terraform, and Kubernetes"
+        jd_keywords = ["azure", "terraform", "kubernetes", "cloud"]
+        base = Project(
+            name="Side Project",
+            start_year="2020",
+            bullets=[Bullet(text="Did some unrelated work")],
+        )
+        with_keywords = Project(
+            name="Side Project",
+            start_year="2020",
+            keywords=["Azure", "Terraform", "Kubernetes"],
+            bullets=[Bullet(text="Did some unrelated work")],
+        )
+        assert score_project(with_keywords, jd_keywords, jd) > score_project(
+            base, jd_keywords, jd
+        )
+
+    def test_score_project_never_exceeds_one(self):
+        jd = "Cloud architect with Azure, Terraform, and Kubernetes"
+        jd_keywords = ["azure", "terraform", "kubernetes", "cloud"]
+        proj = Project(
+            name="Cloud Migration Tool",
+            start_year="2020",
+            description="Cloud architect with Azure, Terraform, and Kubernetes",
+            keywords=["Azure", "Terraform", "Kubernetes"],
+            bullets=[
+                Bullet(text="Cloud architect with Azure, Terraform, and Kubernetes")
+            ],
+        )
+        score = score_project(proj, jd_keywords, jd)
+        assert 0.0 <= score <= 1.0
+
+    def test_specific_bullets_outrank_generic_bullets(self):
+        jd = (
+            "Backend project experience with Go, Kafka, PostgreSQL, "
+            "Kubernetes, Docker required."
+        )
+        jd_keywords = ["go", "kafka", "postgresql", "kubernetes", "docker"]
+        specific = Project(
+            name="Event Pipeline",
+            start_year="2021",
+            bullets=[
+                Bullet(text="Built Kafka and Go services on Kubernetes with Docker"),
+                Bullet(text="Ran PostgreSQL at scale for the pipeline"),
+            ],
+        )
+        generic = Project(
+            name="Misc Project",
+            start_year="2021",
+            bullets=[Bullet(text="Worked on some backend systems")],
+        )
+        assert score_project(specific, jd_keywords, jd) > score_project(
+            generic, jd_keywords, jd
+        )
+
+
 class TestScoreCertification:
     def test_cert_name_matches_keyword(self):
         cert = Certification(name="AWS Certified Solutions Architect")
@@ -463,6 +525,60 @@ class TestScoreResume:
                 assert 0.0 <= bs <= 1.0
         for _, s in scored["scored_certifications"]:
             assert 0.0 <= s <= 1.0
+
+
+class TestScoreResumeWithProjects:
+    def _make_resume_data_with_projects(self) -> ResumeData:
+        resume_data = _make_resume_data()
+        return resume_data.model_copy(
+            update={
+                "projects": [
+                    Project(
+                        name="Terraform Landing Zone Generator",
+                        start_year="2022",
+                        end_year="2023",
+                        description="Generates Azure landing zones from Terraform templates",
+                        bullets=[
+                            Bullet(text="Automated Azure landing zone provisioning")
+                        ],
+                    )
+                ]
+            }
+        )
+
+    def test_category_scores_include_projects(self):
+        resume_data = self._make_resume_data_with_projects()
+        jd = "Cloud architect with Azure and Terraform, 3+ years required."
+        scored = score_resume(resume_data, jd)
+        assert set(scored["category_scores"]) == {
+            "skills",
+            "experience",
+            "projects",
+            "certifications",
+            "keyword_coverage",
+        }
+        assert 0.0 <= scored["category_scores"]["projects"] <= 1.0
+
+    def test_overall_score_weighted_with_projects(self):
+        resume_data = self._make_resume_data_with_projects()
+        jd = "Cloud architect with Azure and Terraform, 3+ years required."
+        scored = score_resume(resume_data, jd)
+        cat = scored["category_scores"]
+        expected = sum(
+            cat[key] * weight
+            for key, weight in OVERALL_SCORE_WEIGHTS_WITH_PROJECTS.items()
+        )
+        assert scored["overall_score"] == pytest.approx(expected)
+
+    def test_scored_projects_present(self):
+        resume_data = self._make_resume_data_with_projects()
+        jd = "Cloud architect with Azure and Terraform, 3+ years required."
+        scored = score_resume(resume_data, jd)
+        assert len(scored["scored_projects"]) == 1
+        proj, s, bullet_scores = scored["scored_projects"][0]
+        assert proj.name == "Terraform Landing Zone Generator"
+        assert 0.0 <= s <= 1.0
+        assert len(bullet_scores) == 1
 
 
 class TestSkillsCategoryScore:

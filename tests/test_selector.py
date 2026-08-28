@@ -3,11 +3,13 @@
 import pytest
 
 from models import (
+    Bullet,
     Certification,
     Education,
     Experience,
     ExperienceBullet,
     Profile,
+    Project,
     ResumeData,
     Skill,
     SkillCategory,
@@ -57,6 +59,31 @@ def sample_resume_data():
                 bullets=[
                     ExperienceBullet(text="Built React applications"),
                     ExperienceBullet(text="Developed Node.js APIs"),
+                ],
+            ),
+        ],
+        projects=[
+            Project(
+                name="Open-Source Rate Limiter",
+                start_year="2022",
+                end_year="2023",
+                keywords=["Go", "Redis", "distributed systems"],
+                bullets=[
+                    Bullet(text="Implemented a Redis-backed sliding window"),
+                    Bullet(text="Published as an open-source module"),
+                    Bullet(text="Wrote benchmark suites"),
+                    Bullet(text="Set up CI for the module"),
+                    Bullet(text="Wrote documentation"),
+                ],
+            ),
+            Project(
+                name="Personal Finance Dashboard",
+                start_year="2020",
+                end_year="2021",
+                keywords=["React", "TypeScript"],
+                bullets=[
+                    Bullet(text="Built a Plaid integration"),
+                    Bullet(text="Designed interactive charts"),
                 ],
             ),
         ],
@@ -113,6 +140,17 @@ class TestSelectGeneric:
         assert result.section_order[0] == "summary"
         assert result.section_order[-1] == "skills"
         assert "experience" in result.section_order
+        assert "projects" in result.section_order
+
+    def test_includes_all_projects(self, sample_resume_data):
+        result = select_generic(sample_resume_data)
+        assert len(result.projects) == 2
+
+    def test_limits_project_bullets(self, sample_resume_data):
+        result = select_generic(sample_resume_data)
+        # First project has 5 bullets, should be limited to MAX_BULLETS_PER_PROJECT (4)
+        _, bullets = result.projects[0]
+        assert len(bullets) <= 4
 
 
 class TestSelectTargeted:
@@ -197,3 +235,56 @@ class TestSelectTargeted:
         assert result.section_order[0] == "summary"
         assert result.section_order[-2] == "education"
         assert result.section_order[-1] == "skills"
+
+    def test_limits_project_bullets_targeted(self, sample_resume_data):
+        scored = {
+            "jd_keywords": ["go"],
+            "scored_skills": [("Cloud", Skill(name="Azure", years=5), 1.0)],
+            "scored_experiences": [],
+            "scored_projects": [
+                (
+                    sample_resume_data.projects[0],
+                    0.8,
+                    [(b, 0.5) for b in sample_resume_data.projects[0].bullets],
+                ),
+            ],
+            "scored_certifications": [],
+            "overall_score": 0.5,
+        }
+        result = select_targeted(sample_resume_data, scored)
+        _, bullets = result.projects[0]
+        assert len(bullets) <= 3  # MAX_BULLETS_PER_PROJECT_TARGETED
+
+    def test_prioritizes_relevant_project_over_certifications(self, sample_resume_data):
+        scored = {
+            "jd_keywords": ["go", "redis"],
+            "scored_skills": [("Cloud", Skill(name="Azure", years=5), 1.0)],
+            "scored_experiences": [
+                (
+                    sample_resume_data.experiences[0],
+                    0.1,
+                    [(b, 0.1) for b in sample_resume_data.experiences[0].bullets],
+                ),
+            ],
+            "scored_projects": [
+                (
+                    sample_resume_data.projects[0],
+                    0.95,
+                    [(b, 0.9) for b in sample_resume_data.projects[0].bullets],
+                ),
+                (
+                    sample_resume_data.projects[1],
+                    0.1,
+                    [(b, 0.1) for b in sample_resume_data.projects[1].bullets],
+                ),
+            ],
+            "scored_certifications": [
+                (sample_resume_data.certifications[0], 0.9),
+            ],
+            "overall_score": 0.6,
+        }
+        result = select_targeted(sample_resume_data, scored)
+        projects_idx = result.section_order.index("projects")
+        certifications_idx = result.section_order.index("certifications")
+        assert projects_idx < certifications_idx
+        assert result.projects[0][0].name == "Open-Source Rate Limiter"

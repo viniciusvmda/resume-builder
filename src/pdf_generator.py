@@ -139,6 +139,27 @@ class ResumePDF(FPDF):
         self.multi_cell(0, LINE_HEIGHT, _sanitize_text(resume.summary))
         self.ln(SECTION_SPACING)
 
+    def _write_bullets(self, bullets: list):
+        """Write an indented bullet list."""
+        self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+        for bullet in bullets:
+            # Temporarily increase left margin for bullet indentation
+            original_margin = self.l_margin
+            self.set_left_margin(original_margin + BULLET_INDENT)
+            self.set_x(original_margin + BULLET_INDENT)
+            self.multi_cell(0, LINE_HEIGHT, _sanitize_text(f"- {bullet.text}"))
+            self.set_left_margin(original_margin)
+
+    def _write_keywords_line(self, keywords: list[str]):
+        """Write the italic 'Keywords: ...' line, if any keywords are present."""
+        if not keywords:
+            return
+        self.ln(1)
+        self.set_font(FONT_FAMILY, "I", FONT_SIZE_SMALL)
+        keywords_line = "Keywords: " + ", ".join(keywords)
+        self.multi_cell(0, LINE_HEIGHT, _sanitize_text(keywords_line))
+        self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+
     def _write_experience(self, resume: SelectedResume):
         """Write experience section."""
         if not resume.experiences:
@@ -172,25 +193,53 @@ class ResumePDF(FPDF):
                 self.multi_cell(0, LINE_HEIGHT, _sanitize_text(exp.description))
                 self.ln(1)
 
-            # Bullets
-            self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
-            for bullet in bullets:
-                # Temporarily increase left margin for bullet indentation
-                original_margin = self.l_margin
-                self.set_left_margin(original_margin + BULLET_INDENT)
-                self.set_x(original_margin + BULLET_INDENT)
-                self.multi_cell(0, LINE_HEIGHT, _sanitize_text(f"- {bullet.text}"))
-                self.set_left_margin(original_margin)
-
-            # Keywords
-            if exp.keywords:
-                self.ln(1)
-                self.set_font(FONT_FAMILY, "I", FONT_SIZE_SMALL)
-                keywords_line = "Keywords: " + ", ".join(exp.keywords)
-                self.multi_cell(0, LINE_HEIGHT, _sanitize_text(keywords_line))
-                self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+            self._write_bullets(bullets)
+            self._write_keywords_line(exp.keywords)
 
             if i < len(resume.experiences) - 1:
+                self.ln(3)
+
+        self.ln(SECTION_SPACING)
+
+    def _write_projects(self, resume: SelectedResume):
+        """Write projects section."""
+        if not resume.projects:
+            return
+        self._write_section_heading(SECTION_HEADINGS["projects"])
+
+        for i, (project, bullets) in enumerate(resume.projects):
+            # Project name line
+            self.set_font(FONT_FAMILY, "B", FONT_SIZE_SUBHEADING)
+            self.cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(project.name),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
+
+            # Dates line
+            self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+            dates_line = f"{project.start_year} - {project.end_year}"
+            self.cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(dates_line),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
+            self.ln(1)
+
+            # Description
+            if project.description:
+                self.set_font(FONT_FAMILY, "I", FONT_SIZE_BODY)
+                self.multi_cell(0, LINE_HEIGHT, _sanitize_text(project.description))
+                self.ln(1)
+
+            self._write_bullets(bullets)
+            self._write_keywords_line(project.keywords)
+
+            if i < len(resume.projects) - 1:
                 self.ln(3)
 
         self.ln(SECTION_SPACING)
@@ -294,6 +343,7 @@ def generate_pdf(resume: SelectedResume, output_path: Path) -> Path:
     section_writers = {
         "summary": pdf._write_summary,
         "experience": pdf._write_experience,
+        "projects": pdf._write_projects,
         "skills": pdf._write_skills,
         "certifications": pdf._write_certifications,
         "education": pdf._write_education,

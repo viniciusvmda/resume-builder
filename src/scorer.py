@@ -8,9 +8,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from models import (
+    Bullet,
     Certification,
     Experience,
     ExperienceBullet,
+    Project,
     ResumeData,
     Skill,
 )
@@ -152,6 +154,17 @@ GENERAL_WEIGHT = 0.4
 OVERALL_SCORE_WEIGHTS = {
     "skills": 0.35,
     "experience": 0.40,
+    "certifications": 0.10,
+    "keyword_coverage": 0.15,
+}
+
+# Used instead of OVERALL_SCORE_WEIGHTS when the resume has a non-empty
+# projects list, so projects.yaml being optional never silently caps
+# overall_score for resumes without one.
+OVERALL_SCORE_WEIGHTS_WITH_PROJECTS = {
+    "skills": 0.30,
+    "experience": 0.35,
+    "projects": 0.10,
     "certifications": 0.10,
     "keyword_coverage": 0.15,
 }
@@ -733,6 +746,70 @@ def score_experience(
     return score
 
 
+def _score_project_detailed(
+    project: Project,
+    jd_keywords: list[str],
+    job_description: str,
+    jd_vector=None,
+    vectorizer=None,
+    jd_classification: dict[str, set[str]] | None = None,
+) -> tuple[float, list[tuple[Bullet, float]]]:
+    """Score a project entry, returning both its scalar score and the
+    per-bullet scores computed along the way (avoids re-scoring bullets twice).
+
+    Projects have no role field, so the experience weight formula's role
+    share is redistributed across description and bullets instead.
+    """
+    desc_score = 0.0
+    if project.description:
+        if jd_vector is not None and vectorizer is not None:
+            desc_score = score_text_similarity_cached(
+                project.description, jd_vector, vectorizer
+            )
+        else:
+            desc_score = score_text_similarity(project.description, job_description)
+
+    bullet_scores = [
+        (
+            b,
+            score_bullet(
+                b,
+                jd_keywords,
+                job_description,
+                jd_vector,
+                vectorizer,
+                jd_classification,
+            ),
+        )
+        for b in project.bullets
+    ]
+    avg_bullet_score = (
+        sum(s for _, s in bullet_scores) / len(bullet_scores) if bullet_scores else 0.0
+    )
+
+    keyword_bonus = 0.0
+    if project.keywords:
+        overlap = sum(
+            1 for kw in project.keywords if kw.lower() in job_description.lower()
+        )
+        keyword_bonus = overlap / len(project.keywords)
+
+    # Weights sum to 1.0 by construction, plus a defense-in-depth clamp.
+    score = min(
+        (desc_score * 0.30) + (avg_bullet_score * 0.55) + (keyword_bonus * 0.15),
+        1.0,
+    )
+    return score, bullet_scores
+
+
+def score_project(
+    project: Project, jd_keywords: list[str], job_description: str
+) -> float:
+    """Score an entire project entry. Always returns [0, 1]."""
+    score, _ = _score_project_detailed(project, jd_keywords, job_description)
+    return score
+
+
 def score_certification(
     cert: Certification,
     jd_keywords: list[str],
@@ -780,6 +857,10 @@ def _all_resume_text(resume_data: ResumeData) -> str:
         parts.append(exp.role)
         parts.append(exp.description or "")
         parts.extend(b.text for b in exp.bullets)
+    for proj in resume_data.projects:
+        parts.append(proj.name)
+        parts.append(proj.description or "")
+        parts.extend(b.text for b in proj.bullets)
     for category in resume_data.skill_categories:
         for skill in category.skills:
             parts.append(skill.name)
@@ -818,6 +899,14 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
         )
         scored_experiences.append((exp, exp_score, bullet_scores))
 
+    # Score projects (bullet scores computed once here, same pattern as experiences)
+    scored_projects: list[tuple[Project, float, list[tuple[Bullet, float]]]] = []
+    for proj in resume_data.projects:
+        proj_score, bullet_scores = _score_project_detailed(
+            proj, jd_keywords, job_description, jd_vector, vectorizer, jd_classification
+        )
+        scored_projects.append((proj, proj_score, bullet_scores))
+
     # Score certifications
     scored_certs = [
         (c, score_certification(c, jd_keywords, job_description, jd_classification))
@@ -843,9 +932,13 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
         ),
         "keyword_coverage": keyword_coverage,
     }
+    weights = OVERALL_SCORE_WEIGHTS
+    if resume_data.projects:
+        category_scores["projects"] = _mean(s for _, s, _ in scored_projects)
+        weights = OVERALL_SCORE_WEIGHTS_WITH_PROJECTS
 
     overall_score = sum(
-        category_scores[key] * weight for key, weight in OVERALL_SCORE_WEIGHTS.items()
+        category_scores[key] * weight for key, weight in weights.items()
     )
 
     keyword_details = score_keyword_match_detailed(
@@ -890,6 +983,7 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
         },
         "scored_skills": scored_skills,
         "scored_experiences": scored_experiences,
+        "scored_projects": scored_projects,
         "scored_certifications": scored_certs,
         "category_scores": category_scores,
         "overall_score": overall_score,

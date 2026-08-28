@@ -6,11 +6,13 @@ from pathlib import Path
 import pytest
 
 from models import (
+    Bullet,
     Certification,
     Education,
     Experience,
     ExperienceBullet,
     Profile,
+    Project,
     Skill,
     SkillCategory,
 )
@@ -65,6 +67,25 @@ def sample_selected_resume():
                 ],
             ),
         ],
+        projects=[
+            (
+                Project(
+                    name="Open-Source Rate Limiter",
+                    start_year="2022",
+                    end_year="2023",
+                    description="A Redis-backed distributed rate limiter.",
+                    keywords=["Go", "Redis", "distributed systems"],
+                    bullets=[
+                        Bullet(text="Implemented a Redis-backed sliding window"),
+                        Bullet(text="Published as an open-source module"),
+                    ],
+                ),
+                [
+                    Bullet(text="Implemented a Redis-backed sliding window"),
+                    Bullet(text="Published as an open-source module"),
+                ],
+            ),
+        ],
         skill_categories=[
             SkillCategory(
                 category="Cloud & Infrastructure",
@@ -90,6 +111,7 @@ def sample_selected_resume():
         section_order=[
             "summary",
             "experience",
+            "projects",
             "certifications",
             "education",
             "skills",

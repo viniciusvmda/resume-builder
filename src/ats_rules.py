@@ -4,6 +4,7 @@
 SECTION_HEADINGS = {
     "summary": "Professional Summary",
     "experience": "Professional Experience",
+    "projects": "Projects",
     "skills": "Technical Skills",
     "certifications": "Certifications",
     "education": "Education",
@@ -13,6 +14,7 @@ SECTION_HEADINGS = {
 DEFAULT_SECTION_ORDER = [
     "summary",
     "experience",
+    "projects",
     "certifications",
     "education",
     "skills",
@@ -38,6 +40,10 @@ PAGE_MARGIN_BOTTOM = 15
 # Maximum bullets per experience entry (for page constraint)
 MAX_BULLETS_PER_EXPERIENCE = 6
 MAX_BULLETS_PER_EXPERIENCE_TARGETED = 5
+
+# Maximum bullets per project entry (for page constraint)
+MAX_BULLETS_PER_PROJECT = 4
+MAX_BULLETS_PER_PROJECT_TARGETED = 3
 
 # Maximum number of skills per category to show
 MAX_SKILLS_PER_CATEGORY = 12

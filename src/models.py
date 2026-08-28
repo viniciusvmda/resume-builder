@@ -19,6 +19,9 @@ class ExperienceBullet(BaseModel):
     text: str
 
 
+Bullet = ExperienceBullet
+
+
 class Experience(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -30,6 +33,17 @@ class Experience(BaseModel):
     description: str | None = None
     keywords: list[str] = []
     bullets: list[ExperienceBullet] = []
+
+
+class Project(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    start_year: str
+    end_year: str = "Present"
+    description: str | None = None
+    keywords: list[str] = []
+    bullets: list[Bullet] = []
 
 
 class Skill(BaseModel):
@@ -63,6 +77,7 @@ class ResumeData(BaseModel):
 
     profile: Profile
     experiences: list[Experience] = []
+    projects: list[Project] = []
     skill_categories: list[SkillCategory] = []
     certifications: list[Certification] = []
     education: list[Education] = []

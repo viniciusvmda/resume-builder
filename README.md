@@ -55,6 +55,7 @@ Edit your career data in `data/`:
 
 - `profile.yaml` — Name, contact info, headline, summary
 - `experiences.yaml` — Work history with bullet points and per-role keywords (rendered in the PDF and used for scoring)
+- `projects.yaml` — Optional. Projects with bullet points and per-project keywords, like experiences but with no company/role and year-only dates (omit the file entirely if you have none)
 - `skills.yaml` — Skills grouped by category with years of experience and aliases
 - `certifications.yaml` — Professional certifications
 - `education.yaml` — Degrees and institutions

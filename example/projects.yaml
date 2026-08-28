@@ -1,0 +1,18 @@
+- name: Open-Source Rate Limiter (Go)
+  start_year: "2023"
+  end_year: "Present"
+  description: "A distributed token-bucket rate limiter used by several small SaaS backends, published as an open-source Go module."
+  keywords: [Go, Redis, distributed systems, open source, concurrency]
+  bullets:
+    - text: "Implemented a Redis-backed sliding-window algorithm supporting 50k+ requests/sec with sub-millisecond overhead"
+    - text: "Published as an open-source module with 200+ GitHub stars and adopted by 3 external teams"
+    - text: "Wrote benchmark suites comparing token-bucket and sliding-window strategies under bursty load"
+
+- name: Personal Finance Dashboard
+  start_year: "2021"
+  end_year: "2022"
+  description: "A self-hosted dashboard aggregating bank and investment data via the Plaid API, built to learn React and time-series visualization."
+  keywords: [React, TypeScript, Plaid API, data visualization]
+  bullets:
+    - text: "Built a Plaid integration syncing transactions across 4 account types nightly"
+    - text: "Designed interactive D3 charts for spending trends and net-worth tracking"

@@ -149,6 +149,8 @@ def generate(
         click.echo("\nScore Breakdown:")
         click.echo(f"  Skills:            {cat_scores['skills']:.0%}")
         click.echo(f"  Experience:        {cat_scores['experience']:.0%}")
+        if "projects" in cat_scores:
+            click.echo(f"  Projects:          {cat_scores['projects']:.0%}")
         click.echo(f"  Certifications:    {cat_scores['certifications']:.0%}")
         click.echo(f"  Keyword Coverage:  {cat_scores['keyword_coverage']:.0%}")
 
@@ -221,6 +223,13 @@ def score(ctx, job_description: Path | None, job_description_text: str | None):
     ):
         click.echo(f"  [{s:.0%}] {exp.role} @ {exp.company}")
 
+    if scored.get("scored_projects"):
+        click.echo("\nProject Relevance Ranking:")
+        for proj, s, _ in sorted(
+            scored["scored_projects"], key=lambda x: x[1], reverse=True
+        ):
+            click.echo(f"  [{s:.0%}] {proj.name}")
+
 
 @main.command()
 @click.pass_context
@@ -244,6 +253,21 @@ def lint(ctx):
                 click.style(f"  {exp.role} @ {exp.company}", fg="yellow", bold=True)
             )
             for bullet_preview, v in exp_violations:
+                click.echo(f'    [{v.rule}] "{v.matched_text}"')
+                click.echo(click.style(f"      → {v.suggestion}", fg="cyan"))
+                total_violations += 1
+            click.echo()
+
+    for proj in resume_data.projects:
+        proj_violations = []
+        for bullet in proj.bullets:
+            result = apply_filters(bullet.text)
+            if result.violations:
+                proj_violations.extend((bullet.text[:60], v) for v in result.violations)
+
+        if proj_violations:
+            click.echo(click.style(f"  {proj.name}", fg="yellow", bold=True))
+            for bullet_preview, v in proj_violations:
                 click.echo(f'    [{v.rule}] "{v.matched_text}"')
                 click.echo(click.style(f"      → {v.suggestion}", fg="cyan"))
                 total_violations += 1
@@ -296,6 +320,23 @@ def _apply_content_filters(
             filtered_bullets.append(new_bullet)
         filtered_experiences.append((exp, filtered_bullets))
 
+    # Filter project bullets
+    filtered_projects = []
+    for proj, bullets in selected.projects:
+        results = filter_bullets(bullets, strict=strict)
+        filtered_bullets = []
+        for new_bullet, violations in results:
+            if violations:
+                total_violations += len(violations)
+                if not strict:
+                    for v in violations:
+                        click.echo(
+                            click.style(f"  ⚠ [{v.rule}] ", fg="yellow")
+                            + f'"{v.matched_text}" in {proj.name}'
+                        )
+            filtered_bullets.append(new_bullet)
+        filtered_projects.append((proj, filtered_bullets))
+
     # Filter summary
     filtered_summary = selected.summary
     if selected.summary:
@@ -318,6 +359,7 @@ def _apply_content_filters(
         profile=selected.profile,
         summary=filtered_summary,
         experiences=filtered_experiences,
+        projects=filtered_projects,
         skill_categories=selected.skill_categories,
         certifications=selected.certifications,
         education=selected.education,
