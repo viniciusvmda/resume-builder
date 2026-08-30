@@ -7,7 +7,7 @@
 On Linux or MacOS:
 
 ```bash
-python3.14 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ```
