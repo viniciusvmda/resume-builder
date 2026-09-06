@@ -3,7 +3,7 @@
   start_date: "Mar 2022"
   end_date: "Present"
   description: "Own the ingestion and processing pipeline for a real-time analytics platform, handling data from thousands of customer integrations. Lead reliability and scalability initiatives for the core event-processing services."
-  keywords: [Kafka, Go, distributed systems, PostgreSQL, database sharding, observability, OpenTelemetry, Prometheus, Grafana, reliability, CI/CD, GitHub Actions, technical leadership]
+  technologies: [Kafka, Go, distributed systems, PostgreSQL, database sharding, observability, OpenTelemetry, Prometheus, Grafana, reliability, CI/CD, GitHub Actions, technical leadership]
   bullets:
     - text: "Redesigned the event ingestion pipeline around Kafka and Go consumers, increasing sustained throughput from 8k to 45k events/sec while cutting p99 processing latency by 60%"
     - text: "Led the migration from a single Postgres instance to a sharded, read-replica architecture, eliminating recurring write contention incidents during peak load"
@@ -17,7 +17,7 @@
   start_date: "Jun 2019"
   end_date: "Feb 2022"
   description: "Built and maintained core transaction processing services for a payments platform operating under PCI DSS compliance requirements, focusing on correctness, auditability, and idempotency guarantees."
-  keywords: [Java, Spring Boot, payments, PCI DSS, compliance, contract testing, Pact, performance optimization, incident management, reliability]
+  technologies: [Java, Spring Boot, payments, PCI DSS, compliance, contract testing, Pact, performance optimization, incident management, reliability]
   bullets:
     - text: "Designed and implemented an idempotent transaction API used by all downstream payment flows, eliminating a class of double-charge incidents reported by merchants"
     - text: "Built an append-only audit logging system for all transaction state changes, satisfying PCI DSS traceability requirements ahead of the annual compliance audit"
@@ -30,7 +30,7 @@
   start_date: "Aug 2017"
   end_date: "May 2019"
   description: "Contributed to the migration of a monolithic e-commerce platform into independently deployable services, working across backend APIs and customer-facing storefront features."
-  keywords: [Node.js, Elasticsearch, microservices, React, e-commerce, feature flags, release management, performance, caching, CDN]
+  technologies: [Node.js, Elasticsearch, microservices, React, e-commerce, feature flags, release management, performance, caching, CDN]
   bullets:
     - text: "Extracted the product catalog and search functionality from the monolith into a standalone Node.js service backed by Elasticsearch, cutting search response times by 70%"
     - text: "Built React-based storefront features including faceted search, cart persistence, and a checkout flow redesign that reduced cart abandonment by 12%"
@@ -42,7 +42,7 @@
   start_date: "Jul 2015"
   end_date: "Jul 2017"
   description: "Built and maintained internal tools and small customer-facing features for a workflow automation product, working closely with senior engineers to learn production engineering practices."
-  keywords: [PHP, MySQL, JavaScript, internal tools, testing, integration tests, quality assurance]
+  technologies: [PHP, MySQL, JavaScript, internal tools, testing, integration tests, quality assurance]
   bullets:
     - text: "Built an internal admin dashboard for support staff to inspect and replay failed customer workflows, reducing average ticket resolution time by 30%"
     - text: "Wrote the team's first suite of automated integration tests for the workflow engine, catching regressions before they reached production"

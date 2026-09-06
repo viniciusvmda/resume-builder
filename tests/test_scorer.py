@@ -135,8 +135,8 @@ class TestScoreSkill:
         score = score_skill(skill, ["terraform"], jd)
         assert score == 1.0
 
-    def test_alias_match(self):
-        skill = Skill(name="Amazon Web Services (AWS)", years=7, aliases=["AWS"])
+    def test_fuzzy_match_on_name(self):
+        skill = Skill(name="AWS", years=7)
         jd = "AWS experience required"
         score = score_skill(skill, ["aws"], jd)
         assert score == 1.0
@@ -295,14 +295,14 @@ class TestScoreExperience:
             start_date="Jan 2020",
             bullets=[ExperienceBullet(text="Did some unrelated work")],
         )
-        with_keywords = Experience(
+        with_technologies = Experience(
             company="Acme",
             role="Engineer",
             start_date="Jan 2020",
-            keywords=["Azure", "Terraform", "Kubernetes"],
+            technologies=["Azure", "Terraform", "Kubernetes"],
             bullets=[ExperienceBullet(text="Did some unrelated work")],
         )
-        assert score_experience(with_keywords, jd_keywords, jd) > score_experience(
+        assert score_experience(with_technologies, jd_keywords, jd) > score_experience(
             base, jd_keywords, jd
         )
 
@@ -314,7 +314,7 @@ class TestScoreExperience:
             role="Cloud Architect",
             start_date="Jan 2020",
             description="Cloud architect with Azure, Terraform, and Kubernetes",
-            keywords=["Azure", "Terraform", "Kubernetes"],
+            technologies=["Azure", "Terraform", "Kubernetes"],
             bullets=[
                 ExperienceBullet(
                     text="Cloud architect with Azure, Terraform, and Kubernetes"
@@ -378,13 +378,13 @@ class TestScoreProject:
             start_year="2020",
             bullets=[Bullet(text="Did some unrelated work")],
         )
-        with_keywords = Project(
+        with_technologies = Project(
             name="Side Project",
             start_year="2020",
-            keywords=["Azure", "Terraform", "Kubernetes"],
+            technologies=["Azure", "Terraform", "Kubernetes"],
             bullets=[Bullet(text="Did some unrelated work")],
         )
-        assert score_project(with_keywords, jd_keywords, jd) > score_project(
+        assert score_project(with_technologies, jd_keywords, jd) > score_project(
             base, jd_keywords, jd
         )
 
@@ -395,7 +395,7 @@ class TestScoreProject:
             name="Cloud Migration Tool",
             start_year="2020",
             description="Cloud architect with Azure, Terraform, and Kubernetes",
-            keywords=["Azure", "Terraform", "Kubernetes"],
+            technologies=["Azure", "Terraform", "Kubernetes"],
             bullets=[
                 Bullet(text="Cloud architect with Azure, Terraform, and Kubernetes")
             ],

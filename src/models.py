@@ -31,7 +31,7 @@ class Experience(BaseModel):
     end_date: str = "Present"
     location: str | None = None
     description: str | None = None
-    keywords: list[str] = []
+    technologies: list[str] = []
     bullets: list[ExperienceBullet] = []
 
 
@@ -42,14 +42,13 @@ class Project(BaseModel):
     start_year: str
     end_year: str = "Present"
     description: str | None = None
-    keywords: list[str] = []
+    technologies: list[str] = []
     bullets: list[Bullet] = []
 
 
 class Skill(BaseModel):
     name: str
     years: float | None = None
-    aliases: list[str] = []
 
 
 class SkillCategory(BaseModel):

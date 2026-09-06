@@ -41,7 +41,7 @@ def sample_selected_resume():
                     start_date="Jan 2023",
                     end_date="Present",
                     description="Leading cloud infrastructure initiatives.",
-                    keywords=["Azure", "Terraform", "cost optimization"],
+                    technologies=["Azure", "Terraform", "cost optimization"],
                     bullets=[
                         ExperienceBullet(
                             text="Designed Azure landing zones for 50+ subscriptions"
@@ -74,7 +74,7 @@ def sample_selected_resume():
                     start_year="2022",
                     end_year="2023",
                     description="A Redis-backed distributed rate limiter.",
-                    keywords=["Go", "Redis", "distributed systems"],
+                    technologies=["Go", "Redis", "distributed systems"],
                     bullets=[
                         Bullet(text="Implemented a Redis-backed sliding window"),
                         Bullet(text="Published as an open-source module"),
