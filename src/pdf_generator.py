@@ -60,7 +60,17 @@ from ats_rules import (
     SECTION_HEADINGS,
     SECTION_SPACING,
 )
+from models import Skill
 from selector import SelectedResume
+
+
+def _format_skill(skill: Skill) -> str:
+    """Render a skill as 'Name (N years)', or just 'Name' when years is unset."""
+    if skill.years is None:
+        return skill.name
+    unit = "year" if skill.years == 1 else "years"
+    years_str = f"{skill.years:g}"
+    return f"{skill.name} ({years_str} {unit})"
 
 
 class ResumePDF(FPDF):
@@ -150,14 +160,14 @@ class ResumePDF(FPDF):
             self.multi_cell(0, LINE_HEIGHT, _sanitize_text(f"- {bullet.text}"))
             self.set_left_margin(original_margin)
 
-    def _write_keywords_line(self, keywords: list[str]):
-        """Write the italic 'Keywords: ...' line, if any keywords are present."""
-        if not keywords:
+    def _write_technologies_line(self, technologies: list[str]):
+        """Write the italic 'Technologies used: ...' line, if any are present."""
+        if not technologies:
             return
         self.ln(1)
         self.set_font(FONT_FAMILY, "I", FONT_SIZE_SMALL)
-        keywords_line = "Keywords: " + ", ".join(keywords)
-        self.multi_cell(0, LINE_HEIGHT, _sanitize_text(keywords_line))
+        technologies_line = "Technologies used: " + ", ".join(technologies)
+        self.multi_cell(0, LINE_HEIGHT, _sanitize_text(technologies_line))
         self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
 
     def _write_experience(self, resume: SelectedResume):
@@ -194,7 +204,7 @@ class ResumePDF(FPDF):
                 self.ln(1)
 
             self._write_bullets(bullets)
-            self._write_keywords_line(exp.keywords)
+            self._write_technologies_line(exp.technologies)
 
             if i < len(resume.experiences) - 1:
                 self.ln(3)
@@ -237,7 +247,7 @@ class ResumePDF(FPDF):
                 self.ln(1)
 
             self._write_bullets(bullets)
-            self._write_keywords_line(project.keywords)
+            self._write_technologies_line(project.technologies)
 
             if i < len(resume.projects) - 1:
                 self.ln(3)
@@ -252,7 +262,7 @@ class ResumePDF(FPDF):
 
         self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
         for cat in resume.skill_categories:
-            skill_names = [s.name for s in cat.skills]
+            skill_names = [_format_skill(s) for s in cat.skills]
             cat_label = _sanitize_text(f"{cat.category}: ")
             self.set_font(FONT_FAMILY, "B", FONT_SIZE_BODY)
             self.cell(self.get_string_width(cat_label), LINE_HEIGHT, cat_label)

@@ -452,14 +452,12 @@ def score_years_requirement(
     if not requirements:
         return 1.0
 
-    names = [skill.name.lower()] + [a.lower() for a in skill.aliases]
+    name = skill.name.lower()
     for req in requirements:
         hint_lower = req.skill_hint.lower()
-        matched = any(name in hint_lower or hint_lower in name for name in names)
+        matched = name in hint_lower or hint_lower in name
         if not matched:
-            matched = any(
-                fuzzy_match_ok(name, hint_lower, use_partial=True)[0] for name in names
-            )
+            matched = fuzzy_match_ok(name, hint_lower, use_partial=True)[0]
         if not matched:
             continue
 
@@ -588,18 +586,15 @@ def score_skill(
     years_requirements: list[YearsRequirement] | None = None,
 ) -> float:
     """Score a single skill against job description keywords. Always returns [0, 1]."""
-    all_names = [skill.name] + skill.aliases
     jd_lower = job_description.lower()
     best_score = 0.0
 
-    for name in all_names:
-        name_lower = name.lower()
-        idx = jd_lower.find(name_lower)
-        if idx != -1:
-            if not is_negated(_preceding_tokens(jd_lower, idx)):
-                best_score = 1.0
-            break
-
+    name_lower = skill.name.lower()
+    idx = jd_lower.find(name_lower)
+    if idx != -1:
+        if not is_negated(_preceding_tokens(jd_lower, idx)):
+            best_score = 1.0
+    else:
         for kw in jd_keywords:
             kw_lower = kw.lower()
             if name_lower == kw_lower:
@@ -608,9 +603,6 @@ def score_skill(
             matched, score = fuzzy_match_ok(name_lower, kw_lower)
             if matched:
                 best_score = max(best_score, score)
-
-        if best_score >= 1.0:
-            break
 
     years_multiplier = (
         score_years_requirement(skill, years_requirements)
@@ -721,11 +713,11 @@ def _score_experience_detailed(
     )
 
     keyword_bonus = 0.0
-    if experience.keywords:
+    if experience.technologies:
         overlap = sum(
-            1 for kw in experience.keywords if kw.lower() in job_description.lower()
+            1 for kw in experience.technologies if kw.lower() in job_description.lower()
         )
-        keyword_bonus = overlap / len(experience.keywords)
+        keyword_bonus = overlap / len(experience.technologies)
 
     # Weights sum to 1.0 by construction, plus a defense-in-depth clamp.
     score = min(
@@ -788,11 +780,11 @@ def _score_project_detailed(
     )
 
     keyword_bonus = 0.0
-    if project.keywords:
+    if project.technologies:
         overlap = sum(
-            1 for kw in project.keywords if kw.lower() in job_description.lower()
+            1 for kw in project.technologies if kw.lower() in job_description.lower()
         )
-        keyword_bonus = overlap / len(project.keywords)
+        keyword_bonus = overlap / len(project.technologies)
 
     # Weights sum to 1.0 by construction, plus a defense-in-depth clamp.
     score = min(
@@ -864,7 +856,6 @@ def _all_resume_text(resume_data: ResumeData) -> str:
     for category in resume_data.skill_categories:
         for skill in category.skills:
             parts.append(skill.name)
-            parts.extend(skill.aliases)
     for cert in resume_data.certifications:
         parts.append(cert.name)
     return " ".join(p for p in parts if p)

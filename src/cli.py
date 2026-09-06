@@ -381,9 +381,7 @@ def _print_low_score_recommendations(scored: dict) -> None:
     if missing_required:
         click.echo("\n  Missing REQUIRED JD keywords not found in your data:")
         click.echo(click.style(f"    {', '.join(missing_required[:15])}", fg="red"))
-        click.echo(
-            "    → Add these to skills.yaml (with aliases) or update experience bullets"
-        )
+        click.echo("    → Add these to skills.yaml or update experience bullets")
 
     if missing_preferred:
         click.echo("\n  Missing preferred JD keywords:")
@@ -404,7 +402,7 @@ def _print_low_score_recommendations(scored: dict) -> None:
         click.echo("\n  Weak skill matches (present but low relevance):")
         for name, s in sorted(weak_skills, key=lambda x: x[1]):
             click.echo(click.style(f"    {name}", fg="yellow") + f" ({s:.0%})")
-        click.echo("    → Add keyword aliases or strengthen related experience bullets")
+        click.echo("    → Strengthen related experience bullets")
 
     # General tips
     click.echo("\n  General tips:")
@@ -412,7 +410,7 @@ def _print_low_score_recommendations(scored: dict) -> None:
         "    - Tailor your summary to emphasize keywords from the job description"
     )
     click.echo("    - Ensure certifications align with role requirements")
-    click.echo("    - Add relevant keyword aliases in skills.yaml for better matching")
+    click.echo("    - Add relevant skills to skills.yaml for better matching")
 
 
 if __name__ == "__main__":

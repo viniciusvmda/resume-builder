@@ -54,9 +54,9 @@ python -m cli --data-dir ./data generate --output ./my-resume.pdf
 Edit your career data in `data/`:
 
 - `profile.yaml` — Name, contact info, headline, summary
-- `experiences.yaml` — Work history with bullet points and per-role keywords (rendered in the PDF and used for scoring)
-- `projects.yaml` — Optional. Projects with bullet points and per-project keywords, like experiences but with no company/role and year-only dates (omit the file entirely if you have none)
-- `skills.yaml` — Skills grouped by category with years of experience and aliases
+- `experiences.yaml` — Work history with bullet points and per-role technologies used (rendered in the PDF and used for scoring)
+- `projects.yaml` — Optional. Projects with bullet points and per-project technologies used, like experiences but with no company/role and year-only dates (omit the file entirely if you have none)
+- `skills.yaml` — Skills grouped by category with years of experience
 - `certifications.yaml` — Professional certifications
 - `education.yaml` — Degrees and institutions
 
@@ -68,7 +68,6 @@ Edit your career data in `data/`:
 - Keywords from job description mirrored in content selection
 - Skills ordered by relevance to target role
 - Experience bullets ranked and filtered by keyword match score
-- Both full names and acronyms included via skill aliases
 
 ## Try It With the Example Data
 

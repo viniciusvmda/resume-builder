@@ -32,7 +32,7 @@ def sample_resume_data():
                 role="Cloud Architect",
                 start_date="Jan 2023",
                 end_date="Present",
-                keywords=[
+                technologies=[
                     "Azure",
                     "Terraform",
                     "Kubernetes",
@@ -55,7 +55,7 @@ def sample_resume_data():
                 role="Full-Stack Developer",
                 start_date="Jan 2020",
                 end_date="Dec 2022",
-                keywords=["React", "Node.js"],
+                technologies=["React", "Node.js"],
                 bullets=[
                     ExperienceBullet(text="Built React applications"),
                     ExperienceBullet(text="Developed Node.js APIs"),
@@ -67,7 +67,7 @@ def sample_resume_data():
                 name="Open-Source Rate Limiter",
                 start_year="2022",
                 end_year="2023",
-                keywords=["Go", "Redis", "distributed systems"],
+                technologies=["Go", "Redis", "distributed systems"],
                 bullets=[
                     Bullet(text="Implemented a Redis-backed sliding window"),
                     Bullet(text="Published as an open-source module"),
@@ -80,7 +80,7 @@ def sample_resume_data():
                 name="Personal Finance Dashboard",
                 start_year="2020",
                 end_year="2021",
-                keywords=["React", "TypeScript"],
+                technologies=["React", "TypeScript"],
                 bullets=[
                     Bullet(text="Built a Plaid integration"),
                     Bullet(text="Designed interactive charts"),
