@@ -35,19 +35,25 @@ python -m cli generate --job-description-text "We are looking for..."
 # Pass contact info at runtime (avoids storing sensitive data in files)
 python -m cli generate --email "you@example.com" --phone "+55 99 99999-9999"
 
-# Show ATS match score against a job description
-python -m cli score --job-description path/to/jd.txt
-
 # Specify custom data directory or output path
 python -m cli --data-dir ./data generate --output ./my-resume.pdf
 ```
 
+When a job description is passed, `generate` also prints an ATS match score
+after the PDF is written — computed by extracting the text back out of the
+*generated PDF* (not the source YAML) and simulating how a real ATS parser
+reads it: detecting section headers and entry boundaries from formatting
+cues alone, the same way tools like Workday or Greenhouse do, rather than
+trusting our own data model's field names. Without a job description,
+`generate` produces the PDF with no score.
+
 ## How It Works
 
 1. **Reads** structured YAML career data from `data/` (profile, experiences, skills, certifications, education)
-2. **Optionally scores** content against a job description using TF-IDF cosine similarity + keyword matching
+2. **Optionally scores** content against a job description (TF-IDF cosine similarity + keyword matching) to select and rank what goes into the resume
 3. **Selects and ranks** the most relevant skills, experience bullets, and certifications
 4. **Generates** a clean, ATS-friendly PDF (single-column, standard fonts, no graphics)
+5. **If a job description was given**, re-extracts the text from the generated PDF and scores *that* — the number reported to you — by detecting sections/entries the way a real ATS parser would (bold/uppercase or fuzzy-matched headers, vertical-gap/bold-line entry boundaries), not by reading the YAML's known field names
 
 ## Data Format
 
@@ -78,11 +84,9 @@ description, so you can try the CLI without setting up your own data first:
 # Generate a generic resume from the example data
 python -m cli --data-dir example generate --output ./example-resume.pdf
 
-# Generate a resume tailored to the example job description
+# Generate a resume tailored to the example job description (also prints
+# the ATS match score, computed from the generated PDF)
 python -m cli --data-dir example generate --job-description example/job-description.txt --output example/example-resume-tailored.pdf
-
-# Score the example profile against the example job description
-python -m cli --data-dir example score --job-description example/job-description.txt
 ```
 
 ## Running Tests

@@ -50,3 +50,48 @@ MAX_SKILLS_PER_CATEGORY = 12
 
 # Page constraints
 MAX_PAGES = 2
+
+# --- PDF text parsing (simulated-ATS scoring) ---
+#
+# Synonym lists used to recognize a section header in arbitrary parsed PDF
+# text, keyed the same way as SECTION_HEADINGS above (which drives what we
+# *write*) so both stay conceptually in sync. This list is intentionally
+# generic — it must also recognize section headers in resumes we didn't
+# generate ourselves, not just our own SECTION_HEADINGS values.
+SECTION_HEADER_SYNONYMS: dict[str, list[str]] = {
+    "summary": ["summary", "professional summary", "profile", "objective"],
+    "experience": [
+        "experience",
+        "professional experience",
+        "work experience",
+        "employment history",
+        "work history",
+    ],
+    "projects": ["projects", "personal projects", "side projects"],
+    "skills": [
+        "skills",
+        "technical skills",
+        "core competencies",
+        "competencies",
+    ],
+    "certifications": ["certifications", "certificates", "licenses"],
+    "education": ["education", "academic background"],
+}
+
+# A header line is short by nature ("EXPERIENCE", "Technical Skills") — used
+# by the primary bold+uppercase heuristic to reject long bold sentences.
+HEADER_MAX_WORDS = 6
+
+# A vertical gap larger than this multiple of the section's typical (median)
+# line gap signals a new subsection (e.g. a new job entry). Tuned higher than
+# OpenResume's reference 1.4x: our own generator (and many real resumes)
+# already inserts a smaller deliberate gap *within* an entry (e.g. before its
+# bullet list or a trailing "Technologies used:" line), which a low ratio
+# misclassifies as a subsection break against the section's small sample of
+# gaps. 2.2x reliably separates entry-to-entry gaps from those intra-entry
+# gaps while still relying on the bold-line fallback below for resumes with
+# uniform spacing but bolded entry titles.
+SUBSECTION_GAP_RATIO = 2.2
+
+# rapidfuzz partial_ratio threshold for the header-synonym fallback match.
+HEADER_FUZZY_THRESHOLD = 82

@@ -16,6 +16,8 @@ from models import (
     ResumeData,
     Skill,
 )
+from pdf_parser import ParsedResume, Section, Subsection
+from text_patterns import BULLET_PREFIX_RE as _BULLET_PREFIX_RE
 
 # Common stop words to exclude from keyword extraction.
 # NOTE: "no"/"not" and "required"/"preferred" are intentionally NOT here —
@@ -306,7 +308,6 @@ _HEADER_PREFERRED_RE = re.compile(
 # Any other short "Title:" line resets classification back to general
 # (e.g. "Responsibilities:", "About the role:").
 _HEADER_GENERIC_RE = re.compile(r"^[A-Za-z][A-Za-z /]{0,40}:\s*$")
-_BULLET_PREFIX_RE = re.compile(r"^[-•*]\s*")
 
 
 def classify_jd_keywords(
@@ -443,11 +444,22 @@ def extract_years_requirements(job_description: str) -> list[YearsRequirement]:
 
 
 def score_years_requirement(
-    skill: Skill, requirements: list[YearsRequirement] | None
+    skill: Skill,
+    requirements: list[YearsRequirement] | None,
+    penalize_unknown: bool = True,
 ) -> float:
     """Multiplier in [0,1] penalizing a skill whose years fall short of a JD requirement.
 
     Returns 1.0 (neutral) when no requirement matches this skill.
+
+    `penalize_unknown` controls what happens when `skill.years is None`: for
+    skills sourced from structured YAML, an omitted `.years` is a genuine
+    "years not specified" signal and is penalized (hard 0.0). For skills
+    recovered from free-form PDF text (see score_resume_from_pdf), a missing
+    years value more often just means the text-extraction regex couldn't
+    confidently find a trailing "(N years)" pattern — not that years are
+    actually absent — so callers on that path pass penalize_unknown=False to
+    treat it as neutral instead.
     """
     if not requirements:
         return 1.0
@@ -464,7 +476,7 @@ def score_years_requirement(
         if req.min_years <= 0:
             return 1.0
         if skill.years is None:
-            return 0.0
+            return 1.0 if not penalize_unknown else 0.0
         if skill.years >= req.min_years:
             return 1.0
         return max(skill.years / req.min_years, 0.0)
@@ -584,8 +596,13 @@ def score_skill(
     jd_keywords: list[str],
     job_description: str,
     years_requirements: list[YearsRequirement] | None = None,
+    penalize_unknown_years: bool = True,
 ) -> float:
-    """Score a single skill against job description keywords. Always returns [0, 1]."""
+    """Score a single skill against job description keywords. Always returns [0, 1].
+
+    See score_years_requirement's `penalize_unknown` for what
+    `penalize_unknown_years` controls.
+    """
     jd_lower = job_description.lower()
     best_score = 0.0
 
@@ -605,7 +622,7 @@ def score_skill(
                 best_score = max(best_score, score)
 
     years_multiplier = (
-        score_years_requirement(skill, years_requirements)
+        score_years_requirement(skill, years_requirements, penalize_unknown_years)
         if years_requirements
         else 1.0
     )
@@ -861,50 +878,20 @@ def _all_resume_text(resume_data: ResumeData) -> str:
     return " ".join(p for p in parts if p)
 
 
-def score_resume(resume_data: ResumeData, job_description: str) -> dict:
-    """Score all resume components against a job description.
-
-    Returns a dict with scored items for use by the selector, a categorical
-    breakdown, and an explanation of what drove (or hurt) the overall score.
-    """
-    jd_keywords = extract_keywords(job_description)
-    jd_classification = classify_jd_keywords(job_description, jd_keywords)
-    years_requirements = extract_years_requirements(job_description)
-    vectorizer, jd_vector = build_jd_vectorizer(job_description)
-
-    # Score skills
-    scored_skills: list[tuple[str, Skill, float]] = []
-    for category in resume_data.skill_categories:
-        for skill in category.skills:
-            s = score_skill(skill, jd_keywords, job_description, years_requirements)
-            scored_skills.append((category.category, skill, s))
-
-    # Score experiences (bullet scores computed once here, reused for both
-    # the experience's own average and the per-bullet detail returned below)
-    scored_experiences: list[
-        tuple[Experience, float, list[tuple[ExperienceBullet, float]]]
-    ] = []
-    for exp in resume_data.experiences:
-        exp_score, bullet_scores = _score_experience_detailed(
-            exp, jd_keywords, job_description, jd_vector, vectorizer, jd_classification
-        )
-        scored_experiences.append((exp, exp_score, bullet_scores))
-
-    # Score projects (bullet scores computed once here, same pattern as experiences)
-    scored_projects: list[tuple[Project, float, list[tuple[Bullet, float]]]] = []
-    for proj in resume_data.projects:
-        proj_score, bullet_scores = _score_project_detailed(
-            proj, jd_keywords, job_description, jd_vector, vectorizer, jd_classification
-        )
-        scored_projects.append((proj, proj_score, bullet_scores))
-
-    # Score certifications
-    scored_certs = [
-        (c, score_certification(c, jd_keywords, job_description, jd_classification))
-        for c in resume_data.certifications
-    ]
-
-    all_resume_text = _all_resume_text(resume_data)
+def _build_score_result(
+    jd_keywords: list[str],
+    jd_classification: dict[str, set[str]],
+    years_requirements: list[YearsRequirement],
+    scored_skills: list[tuple],
+    scored_experiences: list[tuple],
+    scored_projects: list[tuple],
+    scored_certs: list[tuple],
+    all_resume_text: str,
+) -> dict:
+    """Shared category-score/explanation aggregation for both
+    score_resume_for_selection and score_resume_from_pdf. Item tuples are
+    (label_or_object, score, ...) in both callers, so only the last element
+    (the score) is read here."""
     required_keywords = list(jd_classification["required"])
     if required_keywords:
         keyword_coverage = score_keyword_match(all_resume_text, required_keywords)
@@ -924,7 +911,7 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
         "keyword_coverage": keyword_coverage,
     }
     weights = OVERALL_SCORE_WEIGHTS
-    if resume_data.projects:
+    if scored_projects:
         category_scores["projects"] = _mean(s for _, s, _ in scored_projects)
         weights = OVERALL_SCORE_WEIGHTS_WITH_PROJECTS
 
@@ -980,3 +967,274 @@ def score_resume(resume_data: ResumeData, job_description: str) -> dict:
         "overall_score": overall_score,
         "explanation": explanation,
     }
+
+
+def score_resume_for_selection(resume_data: ResumeData, job_description: str) -> dict:
+    """Score all resume components against a job description, for CONTENT
+    SELECTION purposes only (drives select_targeted() before a PDF exists,
+    since selection has to happen pre-generation and there is no PDF yet to
+    score).
+
+    This is authoring assistance, not a simulated ATS score: it reads typed
+    YAML-derived fields directly. For the score actually shown to the user,
+    see score_resume_from_pdf(), which scores the text a real ATS parser
+    would extract from the generated PDF.
+
+    Returns a dict with scored items for use by the selector, a categorical
+    breakdown, and an explanation of what drove (or hurt) the overall score.
+    """
+    jd_keywords = extract_keywords(job_description)
+    jd_classification = classify_jd_keywords(job_description, jd_keywords)
+    years_requirements = extract_years_requirements(job_description)
+    vectorizer, jd_vector = build_jd_vectorizer(job_description)
+
+    # Score skills
+    scored_skills: list[tuple[str, Skill, float]] = []
+    for category in resume_data.skill_categories:
+        for skill in category.skills:
+            s = score_skill(skill, jd_keywords, job_description, years_requirements)
+            scored_skills.append((category.category, skill, s))
+
+    # Score experiences (bullet scores computed once here, reused for both
+    # the experience's own average and the per-bullet detail returned below)
+    scored_experiences: list[
+        tuple[Experience, float, list[tuple[ExperienceBullet, float]]]
+    ] = []
+    for exp in resume_data.experiences:
+        exp_score, bullet_scores = _score_experience_detailed(
+            exp, jd_keywords, job_description, jd_vector, vectorizer, jd_classification
+        )
+        scored_experiences.append((exp, exp_score, bullet_scores))
+
+    # Score projects (bullet scores computed once here, same pattern as experiences)
+    scored_projects: list[tuple[Project, float, list[tuple[Bullet, float]]]] = []
+    for proj in resume_data.projects:
+        proj_score, bullet_scores = _score_project_detailed(
+            proj, jd_keywords, job_description, jd_vector, vectorizer, jd_classification
+        )
+        scored_projects.append((proj, proj_score, bullet_scores))
+
+    # Score certifications
+    scored_certs = [
+        (c, score_certification(c, jd_keywords, job_description, jd_classification))
+        for c in resume_data.certifications
+    ]
+
+    all_resume_text = _all_resume_text(resume_data)
+    return _build_score_result(
+        jd_keywords,
+        jd_classification,
+        years_requirements,
+        scored_skills,
+        scored_experiences,
+        scored_projects,
+        scored_certs,
+        all_resume_text,
+    )
+
+
+# --- PDF-text-based scoring: the actual simulated-ATS entry point ---
+#
+# Weights for score_subsection's blend of a subsection's header_text (role +
+# company/dates + description + any "technologies" mention, all folded
+# together since PDF text can't reliably separate them) vs. its bullets.
+# This collapses score_resume_for_selection's separate role/description/
+# technologies weights (0.3/0.2/0.1) into a single header weight — matching
+# how real ATS engines mostly treat this too, since they rarely reliably
+# separate those fields from raw text either.
+SECTION_HEADER_WEIGHT = 0.6
+SECTION_BULLETS_WEIGHT = 0.4
+
+_SKILL_CATEGORY_LABEL_RE = re.compile(r"^([A-Za-z][A-Za-z0-9 /&]{0,40}):\s*(.+)$")
+_SKILL_SPLIT_RE = re.compile(r"[,;|]")
+_SKILL_YEARS_SUFFIX_RE = re.compile(
+    r"\s*\(\s*(\d+(?:\.\d+)?)\s*\+?\s*years?\s*\)\s*$", re.IGNORECASE
+)
+
+
+def _find_section(parsed: ParsedResume, key: str) -> Section | None:
+    """Return the first parsed section classified with the given canonical
+    heading key (e.g. "skills"), or None if the PDF has no such section."""
+    for section in parsed.sections:
+        if section.heading_key == key:
+            return section
+    return None
+
+
+def score_subsection(
+    subsection: Subsection,
+    jd_keywords: list[str],
+    job_description: str,
+    jd_vector=None,
+    vectorizer=None,
+    jd_classification: dict[str, set[str]] | None = None,
+) -> tuple[float, list[tuple[str, float]]]:
+    """Text-based analog of _score_experience_detailed/_score_project_detailed.
+
+    Scores subsection.header_text as one blended relevance signal (weight
+    SECTION_HEADER_WEIGHT) plus each bullet line via the same tfidf+keyword
+    blend score_bullet() uses (weight SECTION_BULLETS_WEIGHT). Reuses
+    score_bullet by wrapping each text in a throwaway ExperienceBullet, since
+    score_bullet only ever reads `.text`.
+    """
+    header_score = score_bullet(
+        ExperienceBullet(text=subsection.header_text),
+        jd_keywords,
+        job_description,
+        jd_vector,
+        vectorizer,
+        jd_classification,
+    )
+    bullet_scores = [
+        (
+            text,
+            score_bullet(
+                ExperienceBullet(text=text),
+                jd_keywords,
+                job_description,
+                jd_vector,
+                vectorizer,
+                jd_classification,
+            ),
+        )
+        for text in subsection.bullet_lines
+    ]
+    avg_bullet_score = _mean(s for _, s in bullet_scores)
+
+    score = min(
+        (header_score * SECTION_HEADER_WEIGHT) + (avg_bullet_score * SECTION_BULLETS_WEIGHT),
+        1.0,
+    )
+    return score, bullet_scores
+
+
+def _extract_skills_from_section_text(section: Section) -> list[tuple[str, Skill]]:
+    """Split a Skills section's text into (category_label, Skill) pairs.
+
+    Uses only generic delimiters — comma/semicolon/pipe/newline for items, an
+    optional leading "Label:" line for category grouping (falls back to
+    "General"), and a trailing "(N years)"-style suffix for years (falls
+    back to years=None, scored as neutral — see score_years_requirement's
+    penalize_unknown). No assumption is made about our own generator's exact
+    phrasing, so this also works on skills sections from other PDFs.
+    """
+    results: list[tuple[str, Skill]] = []
+    for raw_line in section.text.split("\n"):
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        category = "General"
+        label_match = _SKILL_CATEGORY_LABEL_RE.match(line)
+        if label_match:
+            category = label_match.group(1).strip()
+            line = label_match.group(2).strip()
+
+        for raw_item in _SKILL_SPLIT_RE.split(line):
+            item = raw_item.strip()
+            if not item:
+                continue
+            years = None
+            years_match = _SKILL_YEARS_SUFFIX_RE.search(item)
+            if years_match:
+                years = float(years_match.group(1))
+                item = _SKILL_YEARS_SUFFIX_RE.sub("", item).strip()
+            if item:
+                results.append((category, Skill(name=item, years=years)))
+
+    return results
+
+
+def _extract_certifications_from_section_text(section: Section) -> list[Certification]:
+    """Split a Certifications section into line/bullet items. An optional
+    " - <issuer>" suffix is parsed generically; otherwise issuer is None
+    (issuer isn't used in scoring today, so this is best-effort only)."""
+    certs: list[Certification] = []
+    for line in section.lines:
+        text = _BULLET_PREFIX_RE.sub("", line.text).strip()
+        if not text:
+            continue
+        if " - " in text:
+            name, issuer = text.split(" - ", 1)
+            certs.append(Certification(name=name.strip(), issuer=issuer.strip() or None))
+        else:
+            certs.append(Certification(name=text))
+    return certs
+
+
+def score_resume_from_pdf(parsed: ParsedResume, job_description: str) -> dict:
+    """Score a resume the way a real ATS would: from the text extracted out
+    of the generated PDF, using generic section/subsection detection instead
+    of known YAML field names. This is the score shown to the user.
+
+    Returns the same dict shape as score_resume_for_selection (jd_keywords,
+    jd_requirements, scored_skills, scored_experiences, scored_projects,
+    scored_certifications, category_scores, overall_score, explanation),
+    except scored_experiences/scored_projects entries are
+    (label: str, score, bullet_scores) instead of (Experience, score, ...) —
+    label is the subsection's header_text truncated to ~60 chars, since
+    role/company/name aren't separable fields from PDF text alone.
+    """
+    jd_keywords = extract_keywords(job_description)
+    jd_classification = classify_jd_keywords(job_description, jd_keywords)
+    years_requirements = extract_years_requirements(job_description)
+    vectorizer, jd_vector = build_jd_vectorizer(job_description)
+
+    scored_skills: list[tuple[str, Skill, float]] = []
+    skills_section = _find_section(parsed, "skills")
+    if skills_section:
+        for category, skill in _extract_skills_from_section_text(skills_section):
+            s = score_skill(
+                skill,
+                jd_keywords,
+                job_description,
+                years_requirements,
+                penalize_unknown_years=False,
+            )
+            scored_skills.append((category, skill, s))
+
+    scored_experiences: list[tuple[str, float, list[tuple[str, float]]]] = []
+    experience_section = _find_section(parsed, "experience")
+    if experience_section:
+        for subsection in experience_section.subsections:
+            score, bullet_scores = score_subsection(
+                subsection,
+                jd_keywords,
+                job_description,
+                jd_vector,
+                vectorizer,
+                jd_classification,
+            )
+            scored_experiences.append((subsection.header_text[:60], score, bullet_scores))
+
+    scored_projects: list[tuple[str, float, list[tuple[str, float]]]] = []
+    projects_section = _find_section(parsed, "projects")
+    if projects_section:
+        for subsection in projects_section.subsections:
+            score, bullet_scores = score_subsection(
+                subsection,
+                jd_keywords,
+                job_description,
+                jd_vector,
+                vectorizer,
+                jd_classification,
+            )
+            scored_projects.append((subsection.header_text[:60], score, bullet_scores))
+
+    scored_certs: list[tuple[Certification, float]] = []
+    certifications_section = _find_section(parsed, "certifications")
+    if certifications_section:
+        for cert in _extract_certifications_from_section_text(certifications_section):
+            s = score_certification(cert, jd_keywords, job_description, jd_classification)
+            scored_certs.append((cert, s))
+
+    return _build_score_result(
+        jd_keywords,
+        jd_classification,
+        years_requirements,
+        scored_skills,
+        scored_experiences,
+        scored_projects,
+        scored_certs,
+        parsed.raw_text,
+    )
