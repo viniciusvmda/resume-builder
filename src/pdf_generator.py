@@ -64,9 +64,9 @@ from models import Skill
 from selector import SelectedResume
 
 
-def _format_skill(skill: Skill) -> str:
-    """Render a skill as 'Name (N years)', or just 'Name' when years is unset."""
-    if skill.years is None:
+def _format_skill(skill: Skill, show_years: bool = False) -> str:
+    """Render a skill as 'Name (N years)', or just 'Name' when years is unset or hidden."""
+    if not show_years or skill.years is None:
         return skill.name
     unit = "year" if skill.years == 1 else "years"
     years_str = f"{skill.years:g}"
@@ -76,8 +76,9 @@ def _format_skill(skill: Skill) -> str:
 class ResumePDF(FPDF):
     """Custom FPDF class for ATS-friendly resume generation."""
 
-    def __init__(self):
+    def __init__(self, show_skill_years: bool = False):
         super().__init__()
+        self.show_skill_years = show_skill_years
         self.set_margins(PAGE_MARGIN_LEFT, PAGE_MARGIN_TOP, PAGE_MARGIN_RIGHT)
         self.set_auto_page_break(auto=True, margin=PAGE_MARGIN_BOTTOM)
         self.add_page()
@@ -262,7 +263,9 @@ class ResumePDF(FPDF):
 
         self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
         for cat in resume.skill_categories:
-            skill_names = [_format_skill(s) for s in cat.skills]
+            skill_names = [
+                _format_skill(s, show_years=self.show_skill_years) for s in cat.skills
+            ]
             cat_label = _sanitize_text(f"{cat.category}: ")
             self.set_font(FONT_FAMILY, "B", FONT_SIZE_BODY)
             self.cell(self.get_string_width(cat_label), LINE_HEIGHT, cat_label)
@@ -342,9 +345,11 @@ class ResumePDF(FPDF):
         self.ln(SECTION_SPACING)
 
 
-def generate_pdf(resume: SelectedResume, output_path: Path) -> Path:
+def generate_pdf(
+    resume: SelectedResume, output_path: Path, show_skill_years: bool = False
+) -> Path:
     """Generate an ATS-friendly PDF resume."""
-    pdf = ResumePDF()
+    pdf = ResumePDF(show_skill_years=show_skill_years)
 
     # Write header (name + contact)
     pdf._write_header(resume)

@@ -79,6 +79,11 @@ def main(ctx, data_dir: Path | None):
     default=None,
     help="Phone number to include in the resume header (avoids storing in data files).",
 )
+@click.option(
+    "--show-skill-years/--no-show-skill-years",
+    default=False,
+    help="Render years of experience next to each skill. Disabled by default (adds lines).",
+)
 @click.pass_context
 def generate(
     ctx,
@@ -90,6 +95,7 @@ def generate(
     rank_experience: bool,
     email: str | None,
     phone: str | None,
+    show_skill_years: bool,
 ):
     """Generate an ATS-optimized PDF resume."""
     data_dir = ctx.obj["data_dir"]
@@ -131,7 +137,7 @@ def generate(
         selected = _apply_content_filters(selected, strict=strict_filter)
 
     click.echo(f"Generating PDF at {output_path}...")
-    generate_pdf(selected, output_path)
+    generate_pdf(selected, output_path, show_skill_years=show_skill_years)
     click.echo(f"Done! Resume saved to {output_path}")
 
     if jd_text:
