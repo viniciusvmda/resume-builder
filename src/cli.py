@@ -7,7 +7,8 @@ import click
 from filters import apply_filters, filter_bullets
 from parser import load_resume_data
 from pdf_generator import generate_pdf
-from scorer import score_resume
+from pdf_parser import parse_resume_pdf
+from scorer import score_resume_for_selection, score_resume_from_pdf
 from selector import SelectedResume, select_generic, select_targeted
 
 DEFAULT_DATA_DIR = Path(__file__).parent.parent.parent / "data"
@@ -112,18 +113,18 @@ def generate(
 
     if jd_text:
         click.echo("Scoring content against job description...")
-        scored = score_resume(resume_data, jd_text)
-        click.echo(f"Overall match score: {scored['overall_score']:.1%}")
-        click.echo(f"Top JD keywords: {', '.join(scored['jd_keywords'][:15])}")
+        scored_for_selection = score_resume_for_selection(resume_data, jd_text)
+        click.echo(
+            f"Top JD keywords: {', '.join(scored_for_selection['jd_keywords'][:15])}"
+        )
 
         click.echo("Selecting and ranking content...")
         selected = select_targeted(
-            resume_data, scored, rank_experiences=rank_experience
+            resume_data, scored_for_selection, rank_experiences=rank_experience
         )
     else:
         click.echo("No job description provided — generating generic resume.")
         selected = select_generic(resume_data)
-        scored = None
 
     # Apply content filters
     if filter:
@@ -133,9 +134,14 @@ def generate(
     generate_pdf(selected, output_path)
     click.echo(f"Done! Resume saved to {output_path}")
 
-    if selected.match_score is not None:
+    if jd_text:
+        click.echo("Scoring the generated PDF (simulating how a real ATS parses it)...")
+        parsed = parse_resume_pdf(output_path)
+        scored = score_resume_from_pdf(parsed, jd_text)
+        overall_score = scored["overall_score"]
+
         click.echo(f"\n{'=' * 40}")
-        click.echo(f"  ATS Match Score: {selected.match_score:.1%}")
+        click.echo(f"  ATS Match Score (from generated PDF): {overall_score:.1%}")
         click.echo(f"{'=' * 40}")
 
         top_skills = sorted(scored["scored_skills"], key=lambda x: x[2], reverse=True)
@@ -154,81 +160,12 @@ def generate(
         click.echo(f"  Certifications:    {cat_scores['certifications']:.0%}")
         click.echo(f"  Keyword Coverage:  {cat_scores['keyword_coverage']:.0%}")
 
-        if selected.match_score < 0.5:
+        if overall_score < 0.5:
             _print_low_score_recommendations(scored)
     else:
         click.echo(
             "\n(No ATS score — provide a job description with -jd to get a match score)"
         )
-
-
-@main.command()
-@click.option(
-    "--job-description",
-    "-jd",
-    type=click.Path(exists=True, path_type=Path),
-    default=None,
-    help="Path to a job description text file.",
-)
-@click.option(
-    "--job-description-text",
-    "-jdt",
-    type=str,
-    default=None,
-    help="Inline job description text.",
-)
-@click.pass_context
-def score(ctx, job_description: Path | None, job_description_text: str | None):
-    """Show ATS match score for your resume against a job description."""
-    data_dir = ctx.obj["data_dir"]
-
-    if not job_description and not job_description_text:
-        click.echo(
-            "Error: Provide a job description with --job-description or --job-description-text",
-            err=True,
-        )
-        raise SystemExit(1)
-
-    resume_data = load_resume_data(data_dir)
-
-    jd_text = ""
-    if job_description:
-        jd_text = job_description.read_text()
-    elif job_description_text:
-        jd_text = job_description_text
-
-    click.echo("Scoring resume against job description...")
-    scored = score_resume(resume_data, jd_text)
-
-    click.echo(f"\n{'=' * 50}")
-    click.echo(f"  ATS MATCH SCORE: {scored['overall_score']:.1%}")
-    click.echo(f"{'=' * 50}\n")
-
-    # Show top keywords found
-    click.echo(f"Top JD Keywords Extracted ({len(scored['jd_keywords'])} total):")
-    for kw in scored["jd_keywords"][:20]:
-        click.echo(f"  - {kw}")
-
-    # Show top matching skills
-    click.echo("\nTop Matching Skills:")
-    top_skills = sorted(scored["scored_skills"], key=lambda x: x[2], reverse=True)[:10]
-    for cat, skill, s in top_skills:
-        if s > 0:
-            click.echo(f"  [{s:.0%}] {skill.name} ({cat})")
-
-    # Show experience ranking
-    click.echo("\nExperience Relevance Ranking:")
-    for exp, s, _ in sorted(
-        scored["scored_experiences"], key=lambda x: x[1], reverse=True
-    ):
-        click.echo(f"  [{s:.0%}] {exp.role} @ {exp.company}")
-
-    if scored.get("scored_projects"):
-        click.echo("\nProject Relevance Ranking:")
-        for proj, s, _ in sorted(
-            scored["scored_projects"], key=lambda x: x[1], reverse=True
-        ):
-            click.echo(f"  [{s:.0%}] {proj.name}")
 
 
 @main.command()

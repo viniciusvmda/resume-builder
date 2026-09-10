@@ -25,7 +25,7 @@ from scorer import (
     score_keyword_match,
     score_keyword_relevance,
     score_project,
-    score_resume,
+    score_resume_for_selection,
     score_skill,
     score_text_similarity,
     score_years_requirement,
@@ -476,13 +476,13 @@ class TestScoreResume:
     def test_overall_score_bounded(self):
         resume_data = _make_resume_data()
         jd = "Cloud architect with Azure and Terraform, 3+ years required."
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         assert 0.0 <= scored["overall_score"] <= 1.0
 
     def test_category_scores_present_and_bounded(self):
         resume_data = _make_resume_data()
         jd = "Cloud architect with Azure and Terraform, 3+ years required."
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         for value in scored["category_scores"].values():
             assert 0.0 <= value <= 1.0
         assert set(scored["category_scores"]) == {
@@ -495,7 +495,7 @@ class TestScoreResume:
     def test_overall_score_weighted_by_category(self):
         resume_data = _make_resume_data()
         jd = "Cloud architect with Azure and Terraform, 3+ years required."
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         cat = scored["category_scores"]
         expected = (
             cat["skills"] * 0.35
@@ -508,7 +508,7 @@ class TestScoreResume:
     def test_explanation_lists_missing_required_keywords(self):
         resume_data = _make_resume_data()
         jd = "Cloud architect with Azure, Terraform, and Kubernetes required."
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         assert "kubernetes" in [
             k.lower() for k in scored["explanation"]["missing_required"]
         ]
@@ -516,7 +516,7 @@ class TestScoreResume:
     def test_all_scores_within_bounds(self):
         resume_data = _make_resume_data()
         jd = "Cloud architect with Azure, Terraform, and Kubernetes required."
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         for _, _, s in scored["scored_skills"]:
             assert 0.0 <= s <= 1.0
         for _, s, bullet_scores in scored["scored_experiences"]:
@@ -549,7 +549,7 @@ class TestScoreResumeWithProjects:
     def test_category_scores_include_projects(self):
         resume_data = self._make_resume_data_with_projects()
         jd = "Cloud architect with Azure and Terraform, 3+ years required."
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         assert set(scored["category_scores"]) == {
             "skills",
             "experience",
@@ -562,7 +562,7 @@ class TestScoreResumeWithProjects:
     def test_overall_score_weighted_with_projects(self):
         resume_data = self._make_resume_data_with_projects()
         jd = "Cloud architect with Azure and Terraform, 3+ years required."
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         cat = scored["category_scores"]
         expected = sum(
             cat[key] * weight
@@ -573,7 +573,7 @@ class TestScoreResumeWithProjects:
     def test_scored_projects_present(self):
         resume_data = self._make_resume_data_with_projects()
         jd = "Cloud architect with Azure and Terraform, 3+ years required."
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         assert len(scored["scored_projects"]) == 1
         proj, s, bullet_scores = scored["scored_projects"][0]
         assert proj.name == "Terraform Landing Zone Generator"
@@ -599,7 +599,7 @@ class TestSkillsCategoryScore:
                 )
             ],
         )
-        scored = score_resume(resume_data, jd)
+        scored = score_resume_for_selection(resume_data, jd)
         # A flat mean would put this around 2/52 ≈ 4%.
         assert scored["category_scores"]["skills"] > 0.2
 
@@ -620,8 +620,8 @@ class TestSkillsCategoryScore:
                 )
             ],
         )
-        small_score = score_resume(small, jd)["category_scores"]["skills"]
-        large_score = score_resume(large, jd)["category_scores"]["skills"]
+        small_score = score_resume_for_selection(small, jd)["category_scores"]["skills"]
+        large_score = score_resume_for_selection(large, jd)["category_scores"]["skills"]
         assert small_score == large_score
 
 
