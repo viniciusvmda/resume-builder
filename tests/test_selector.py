@@ -2,7 +2,7 @@
 
 import pytest
 
-from models import (
+from resume_builder.models import (
     Bullet,
     Certification,
     Education,
@@ -14,7 +14,7 @@ from models import (
     Skill,
     SkillCategory,
 )
-from selector import select_generic, select_targeted
+from resume_builder.selector import select_generic, select_targeted
 
 
 @pytest.fixture

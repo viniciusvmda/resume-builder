@@ -2,7 +2,7 @@
 
 import pytest
 
-from models import (
+from resume_builder.models import (
     Bullet,
     Certification,
     Education,
@@ -13,8 +13,8 @@ from models import (
     Skill,
     SkillCategory,
 )
-from pdf_generator import generate_pdf
-from selector import SelectedResume
+from resume_builder.pdf_generator import generate_pdf
+from resume_builder.selector import SelectedResume
 
 
 @pytest.fixture

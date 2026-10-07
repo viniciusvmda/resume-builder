@@ -36,7 +36,7 @@ jobs:
     - name: Run Tests with Coverage
       id: tests-python
       if: always()
-      run: pytest --cov=src
+      run: pytest --cov=resume_builder
 
     - name: Generate Coverage Summary
       if: always() && steps.tests-python.outcome == 'success'

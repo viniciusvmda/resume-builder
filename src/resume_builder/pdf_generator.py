@@ -44,7 +44,7 @@ def _sanitize_text(text: str) -> str:
     return text
 
 
-from ats_rules import (
+from .ats_rules import (
     BULLET_INDENT,
     FONT_FAMILY,
     FONT_SIZE_BODY,
@@ -60,8 +60,8 @@ from ats_rules import (
     SECTION_HEADINGS,
     SECTION_SPACING,
 )
-from models import Skill
-from selector import SelectedResume
+from .models import Skill
+from .selector import SelectedResume
 
 
 def _format_skill(skill: Skill, show_years: bool = False) -> str:

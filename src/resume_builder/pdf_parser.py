@@ -17,13 +17,13 @@ from typing import NamedTuple
 import pdfplumber
 from rapidfuzz import fuzz
 
-from ats_rules import (
+from .ats_rules import (
     HEADER_FUZZY_THRESHOLD,
     HEADER_MAX_WORDS,
     SECTION_HEADER_SYNONYMS,
     SUBSECTION_GAP_RATIO,
 )
-from text_patterns import BULLET_PREFIX_RE
+from .text_patterns import BULLET_PREFIX_RE
 
 # Chars whose "top" coordinate differs by less than this (in points) are
 # considered part of the same visual line.

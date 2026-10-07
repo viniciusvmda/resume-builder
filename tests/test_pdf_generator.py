@@ -3,9 +3,9 @@
 import tempfile
 from pathlib import Path
 
-from models import Profile
-from pdf_generator import generate_pdf
-from selector import SelectedResume
+from resume_builder.models import Profile
+from resume_builder.pdf_generator import generate_pdf
+from resume_builder.selector import SelectedResume
 
 
 class TestGeneratePDF:

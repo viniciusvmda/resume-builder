@@ -2,7 +2,7 @@
 
 import pytest
 
-from models import (
+from resume_builder.models import (
     Bullet,
     Certification,
     Experience,
@@ -13,7 +13,7 @@ from models import (
     Skill,
     SkillCategory,
 )
-from scorer import (
+from resume_builder.scorer import (
     OVERALL_SCORE_WEIGHTS_WITH_PROJECTS,
     classify_jd_keywords,
     extract_keywords,

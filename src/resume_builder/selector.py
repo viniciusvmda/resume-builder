@@ -1,6 +1,6 @@
 """Content selection and ranking logic."""
 
-from ats_rules import (
+from .ats_rules import (
     DEFAULT_SECTION_ORDER,
     MAX_BULLETS_PER_EXPERIENCE,
     MAX_BULLETS_PER_EXPERIENCE_TARGETED,
@@ -8,7 +8,7 @@ from ats_rules import (
     MAX_BULLETS_PER_PROJECT_TARGETED,
     MAX_SKILLS_PER_CATEGORY,
 )
-from models import (
+from .models import (
     Bullet,
     Certification,
     Education,

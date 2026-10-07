@@ -2,7 +2,7 @@
 
 import pytest
 
-from parser import load_projects, load_resume_data
+from resume_builder.parser import load_projects, load_resume_data
 
 
 @pytest.fixture

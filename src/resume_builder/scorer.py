@@ -7,7 +7,7 @@ from rapidfuzz import fuzz
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from models import (
+from .models import (
     Bullet,
     Certification,
     Experience,
@@ -16,8 +16,8 @@ from models import (
     ResumeData,
     Skill,
 )
-from pdf_parser import ParsedResume, Section, Subsection
-from text_patterns import BULLET_PREFIX_RE as _BULLET_PREFIX_RE
+from .pdf_parser import ParsedResume, Section, Subsection
+from .text_patterns import BULLET_PREFIX_RE as _BULLET_PREFIX_RE
 
 # Common stop words to exclude from keyword extraction.
 # NOTE: "no"/"not" and "required"/"preferred" are intentionally NOT here —

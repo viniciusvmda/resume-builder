@@ -4,12 +4,12 @@ from pathlib import Path
 
 import click
 
-from filters import apply_filters, filter_bullets
-from parser import load_resume_data
-from pdf_generator import generate_pdf
-from pdf_parser import parse_resume_pdf
-from scorer import score_resume_for_selection, score_resume_from_pdf
-from selector import SelectedResume, select_generic, select_targeted
+from .filters import apply_filters, filter_bullets
+from .parser import load_resume_data
+from .pdf_generator import generate_pdf
+from .pdf_parser import parse_resume_pdf
+from .scorer import score_resume_for_selection, score_resume_from_pdf
+from .selector import SelectedResume, select_generic, select_targeted
 
 DEFAULT_DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DEFAULT_OUTPUT_DIR = Path(__file__).parent.parent.parent / "output"
@@ -355,6 +355,3 @@ def _print_low_score_recommendations(scored: dict) -> None:
     click.echo("    - Ensure certifications align with role requirements")
     click.echo("    - Add relevant skills to skills.yaml for better matching")
 
-
-if __name__ == "__main__":
-    main()

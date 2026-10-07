@@ -24,19 +24,19 @@ python -m pip install -e ".[dev]"
 
 ```bash
 # Generate a generic resume (all experience, default ordering)
-python -m cli generate
+python -m resume_builder generate
 
 # Generate a targeted resume for a specific job description
-python -m cli generate --job-description path/to/jd.txt
+python -m resume_builder generate --job-description path/to/jd.txt
 
 # Generate with inline JD text
-python -m cli generate --job-description-text "We are looking for..."
+python -m resume_builder generate --job-description-text "We are looking for..."
 
 # Pass contact info at runtime (avoids storing sensitive data in files)
-python -m cli generate --email "you@example.com" --phone "+55 99 99999-9999"
+python -m resume_builder generate --email "you@example.com" --phone "+55 99 99999-9999"
 
 # Specify custom data directory or output path
-python -m cli --data-dir ./data generate --output ./my-resume.pdf
+python -m resume_builder --data-dir ./data generate --output ./my-resume.pdf
 ```
 
 When a job description is passed, `generate` also prints an ATS match score
@@ -82,11 +82,11 @@ description, so you can try the CLI without setting up your own data first:
 
 ```bash
 # Generate a generic resume from the example data
-python -m cli --data-dir example generate --output ./example-resume.pdf
+python -m resume_builder --data-dir example generate --output ./example-resume.pdf
 
 # Generate a resume tailored to the example job description (also prints
 # the ATS match score, computed from the generated PDF)
-python -m cli --data-dir example generate --job-description example/job-description.txt --output example/example-resume-tailored.pdf
+python -m resume_builder --data-dir example generate --job-description example/job-description.txt --output example/example-resume-tailored.pdf
 ```
 
 ## Running Tests

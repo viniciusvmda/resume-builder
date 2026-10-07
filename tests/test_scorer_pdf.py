@@ -1,8 +1,8 @@
 """Tests for the PDF-text-based (simulated ATS) scoring path."""
 
-from models import Skill
-from pdf_parser import parse_resume_pdf
-from scorer import (
+from resume_builder.models import Skill
+from resume_builder.pdf_parser import parse_resume_pdf
+from resume_builder.scorer import (
     YearsRequirement,
     score_resume_from_pdf,
     score_years_requirement,

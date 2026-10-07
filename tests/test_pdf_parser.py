@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fpdf import FPDF
 
-from pdf_parser import (
+from resume_builder.pdf_parser import (
     classify_header,
     is_section_header,
     parse_resume_pdf,
@@ -29,7 +29,7 @@ class TestIsSectionHeader:
                 pdf.cell(0, 10, "EXPERIENCE", new_x="LMARGIN", new_y="NEXT"),
             ),
         )
-        from pdf_parser import extract_lines
+        from resume_builder.pdf_parser import extract_lines
 
         lines = extract_lines(pdf_path)
         assert len(lines) == 1
@@ -48,7 +48,7 @@ class TestIsSectionHeader:
                 ),
             ),
         )
-        from pdf_parser import extract_lines
+        from resume_builder.pdf_parser import extract_lines
 
         lines = extract_lines(pdf_path)
         assert len(lines) == 1
@@ -62,7 +62,7 @@ class TestIsSectionHeader:
                 pdf.cell(0, 10, "Work History", new_x="LMARGIN", new_y="NEXT"),
             ),
         )
-        from pdf_parser import extract_lines
+        from resume_builder.pdf_parser import extract_lines
 
         lines = extract_lines(pdf_path)
         assert len(lines) == 1
@@ -79,7 +79,7 @@ class TestIsSectionHeader:
                 pdf.cell(0, 10, "Senior Engineer", new_x="LMARGIN", new_y="NEXT"),
             ),
         )
-        from pdf_parser import extract_lines
+        from resume_builder.pdf_parser import extract_lines
 
         lines = extract_lines(pdf_path)
         assert len(lines) == 1
@@ -97,7 +97,7 @@ class TestSplitIntoSubsections:
             pdf.cell(0, 5, "Company Two", new_x="LMARGIN", new_y="NEXT")
 
         pdf_path = _build_pdf(tmp_path / "e.pdf", writer)
-        from pdf_parser import extract_lines
+        from resume_builder.pdf_parser import extract_lines
 
         lines = extract_lines(pdf_path)
         subsections = split_into_subsections(lines)
@@ -117,7 +117,7 @@ class TestSplitIntoSubsections:
             pdf.cell(0, 5, "Company Two", new_x="LMARGIN", new_y="NEXT")
 
         pdf_path = _build_pdf(tmp_path / "f.pdf", writer)
-        from pdf_parser import extract_lines
+        from resume_builder.pdf_parser import extract_lines
 
         lines = extract_lines(pdf_path)
         subsections = split_into_subsections(lines)
@@ -131,7 +131,7 @@ class TestSplitIntoSubsections:
             pdf.cell(0, 5, "- Did another thing", new_x="LMARGIN", new_y="NEXT")
 
         pdf_path = _build_pdf(tmp_path / "g.pdf", writer)
-        from pdf_parser import extract_lines
+        from resume_builder.pdf_parser import extract_lines
 
         lines = extract_lines(pdf_path)
         subsections = split_into_subsections(lines)
