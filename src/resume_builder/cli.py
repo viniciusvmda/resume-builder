@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 
+from .ats_rules import resolve_section_order
 from .filters import apply_filters, filter_bullets
 from .parser import load_resume_data
 from .pdf_generator import generate_pdf
@@ -84,6 +85,34 @@ def main(ctx, data_dir: Path | None):
     default=False,
     help="Render years of experience next to each skill. Disabled by default (adds lines).",
 )
+@click.option(
+    "--lang",
+    "--language",
+    "-l",
+    type=click.Choice(["en", "pt-br", "pt"], case_sensitive=False),
+    default="en",
+    help="Language for resume generation ('en' or 'pt-br'). Defaults to 'en'.",
+)
+@click.option(
+    "--section-order",
+    "--sections",
+    type=str,
+    default=None,
+    help="Custom section display order using comma-separated YAML names (e.g. 'profile,education,experiences,projects,skills').",
+)
+@click.option(
+    "--font",
+    "--font-family",
+    type=str,
+    default=None,
+    help="Font family for PDF generation ('helvetica', 'cmu-serif', 'times', etc.). Defaults to 'helvetica'.",
+)
+@click.option(
+    "--data-dir",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Path to YAML data directory. Overrides root --data-dir.",
+)
 @click.pass_context
 def generate(
     ctx,
@@ -96,10 +125,21 @@ def generate(
     email: str | None,
     phone: str | None,
     show_skill_years: bool,
+    lang: str,
+    section_order: str | None = None,
+    font: str | None = None,
+    data_dir: Path | None = None,
 ):
     """Generate an ATS-optimized PDF resume."""
-    data_dir = ctx.obj["data_dir"]
+    data_dir = data_dir or ctx.obj.get("data_dir") or DEFAULT_DATA_DIR
     output_path = output or DEFAULT_OUTPUT_DIR / "resume.pdf"
+    lang_key = (lang or "en").lower().strip()
+    if lang_key == "pt":
+        lang_key = "pt-br"
+
+    # Support language subfolder (e.g. data/pt-br/) if present
+    if not (data_dir / "profile.yaml").exists() and (data_dir / lang_key / "profile.yaml").exists():
+        data_dir = data_dir / lang_key
 
     click.echo(f"Loading career data from {data_dir}...")
     resume_data = load_resume_data(data_dir)
@@ -109,6 +149,17 @@ def generate(
         resume_data.profile.email = email
     if phone:
         resume_data.profile.phone = phone
+
+    # Parse custom section order if provided via CLI flag or profile.yaml
+    section_order_arg = section_order or resume_data.profile.section_order
+    parsed_section_order = None
+    if section_order_arg:
+        try:
+            parsed_section_order = resolve_section_order(
+                section_order_arg, available_languages=bool(resume_data.languages)
+            )
+        except ValueError as err:
+            raise click.BadParameter(str(err), param_hint="--section-order")
 
     # Determine if we're doing targeted or generic generation
     jd_text = None
@@ -126,18 +177,28 @@ def generate(
 
         click.echo("Selecting and ranking content...")
         selected = select_targeted(
-            resume_data, scored_for_selection, rank_experiences=rank_experience
+            resume_data,
+            scored_for_selection,
+            rank_experiences=rank_experience,
+            section_order=parsed_section_order,
         )
     else:
         click.echo("No job description provided — generating generic resume.")
-        selected = select_generic(resume_data)
+        selected = select_generic(resume_data, section_order=parsed_section_order)
 
     # Apply content filters
     if filter:
         selected = _apply_content_filters(selected, strict=strict_filter)
 
-    click.echo(f"Generating PDF at {output_path}...")
-    generate_pdf(selected, output_path, show_skill_years=show_skill_years)
+    font_to_use = font or resume_data.profile.font or "helvetica"
+    click.echo(f"Generating PDF ({lang_key}, font: {font_to_use}) at {output_path}...")
+    generate_pdf(
+        selected,
+        output_path,
+        show_skill_years=show_skill_years,
+        lang=lang_key,
+        font=font_to_use,
+    )
     click.echo(f"Done! Resume saved to {output_path}")
 
     if jd_text:
@@ -306,6 +367,7 @@ def _apply_content_filters(
         skill_categories=selected.skill_categories,
         certifications=selected.certifications,
         education=selected.education,
+        languages=selected.languages,
         section_order=selected.section_order,
         match_score=selected.match_score,
     )

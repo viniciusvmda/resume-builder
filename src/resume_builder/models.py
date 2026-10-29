@@ -9,8 +9,11 @@ class Profile(BaseModel):
     phone: str | None = None
     linkedin: str | None = None
     location: str | None = None
+    nationality: str | None = None
     headline: str | None = None
     summary: str | None = None
+    section_order: list[str] | str | None = None
+    font: str | None = None
 
 
 class ExperienceBullet(BaseModel):
@@ -71,6 +74,16 @@ class Education(BaseModel):
     notes: str | None = None
 
 
+class Language(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    name: str | None = None
+    language: str | None = None
+    proficiency: str | None = None
+    level: str | None = None
+    notes: str | None = None
+
+
 class ResumeData(BaseModel):
     """Complete resume data loaded from YAML files."""
 
@@ -80,3 +93,4 @@ class ResumeData(BaseModel):
     skill_categories: list[SkillCategory] = []
     certifications: list[Certification] = []
     education: list[Education] = []
+    languages: list[Language] = []

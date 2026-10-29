@@ -10,6 +10,7 @@ from .models import (
     Education,
     Experience,
     ExperienceBullet,
+    Language,
     Profile,
     Project,
     ResumeData,
@@ -95,6 +96,32 @@ def load_education(data_dir: Path) -> list[Education]:
     return [Education(**e) for e in data]
 
 
+def load_languages(data_dir: Path) -> list[Language]:
+    """Load languages.yaml if present."""
+    languages_file = Path(data_dir) / "languages.yaml"
+    if not languages_file.exists():
+        return []
+    data = load_yaml(languages_file)
+    if not data or not isinstance(data, list):
+        return []
+    languages = []
+    for item in data:
+        if isinstance(item, str):
+            languages.append(Language(name=item.strip()))
+        elif isinstance(item, dict):
+            lang_name = item.get("name") or item.get("language") or ""
+            proficiency = item.get("proficiency") or item.get("level")
+            notes = item.get("notes")
+            languages.append(
+                Language(
+                    name=lang_name,
+                    proficiency=proficiency,
+                    notes=notes,
+                )
+            )
+    return languages
+
+
 def load_resume_data(data_dir: Path) -> ResumeData:
     """Load all YAML files and return a validated ResumeData object."""
     data_dir = Path(data_dir)
@@ -105,4 +132,5 @@ def load_resume_data(data_dir: Path) -> ResumeData:
         skill_categories=load_skills(data_dir),
         certifications=load_certifications(data_dir),
         education=load_education(data_dir),
+        languages=load_languages(data_dir),
     )

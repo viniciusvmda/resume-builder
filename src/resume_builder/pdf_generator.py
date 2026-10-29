@@ -1,10 +1,14 @@
 """ATS-friendly PDF generation using fpdf2."""
 
+import logging
 from pathlib import Path
 
 from fpdf import FPDF
 
-# Unicode → ASCII replacements for PDF compatibility with core fonts
+# Suppress fontTools warnings about dropping non-standard font tables (e.g. TeX metadata) during subsetting
+logging.getLogger("fontTools").setLevel(logging.ERROR)
+
+# Unicode punctuation replacements for PDF compatibility
 _UNICODE_REPLACEMENTS = {
     "\u2014": " - ",  # em dash
     "\u2013": "-",  # en dash
@@ -21,32 +25,18 @@ _UNICODE_REPLACEMENTS = {
     "\u00b7": "-",  # middle dot
     "\u2023": ">",  # triangular bullet
     "\u2043": "-",  # hyphen bullet
-    "\u00e9": "e",  # é
-    "\u00e7": "c",  # ç
-    "\u00e3": "a",  # ã
-    "\u00f3": "o",  # ó
-    "\u00ed": "i",  # í
-    "\u00e1": "a",  # á
-    "\u00ea": "e",  # ê
-    "\u00f4": "o",  # ô
-    "\u00e0": "a",  # à
-    "\u00fc": "u",  # ü
-    "\u007e": "~",  # tilde
 }
 
 
 def _sanitize_text(text: str) -> str:
-    """Replace Unicode characters with ASCII equivalents for PDF core fonts."""
+    """Normalize typography punctuation and whitespace for PDF rendering."""
     for char, replacement in _UNICODE_REPLACEMENTS.items():
         text = text.replace(char, replacement)
-    # Remove any remaining non-latin-1 characters
-    text = text.encode("latin-1", errors="replace").decode("latin-1")
     return text
 
 
 from .ats_rules import (
     BULLET_INDENT,
-    FONT_FAMILY,
     FONT_SIZE_BODY,
     FONT_SIZE_HEADING,
     FONT_SIZE_NAME,
@@ -57,28 +47,93 @@ from .ats_rules import (
     PAGE_MARGIN_LEFT,
     PAGE_MARGIN_RIGHT,
     PAGE_MARGIN_TOP,
-    SECTION_HEADINGS,
     SECTION_SPACING,
+    get_labels,
+    get_section_headings,
+    resolve_font_family,
 )
-from .models import Skill
+from .models import Language, Skill
 from .selector import SelectedResume
 
 
-def _format_skill(skill: Skill, show_years: bool = False) -> str:
+def _format_skill(skill: Skill, show_years: bool = False, lang: str = "en") -> str:
     """Render a skill as 'Name (N years)', or just 'Name' when years is unset or hidden."""
     if not show_years or skill.years is None:
         return skill.name
-    unit = "year" if skill.years == 1 else "years"
+    labels = get_labels(lang)
+    unit = labels["year"] if skill.years == 1 else labels["years"]
     years_str = f"{skill.years:g}"
     return f"{skill.name} ({years_str} {unit})"
+
+
+def _format_language(lang: Language) -> str:
+    """Render a language as 'Name (Proficiency, Notes)', 'Name (Proficiency)', or 'Name'."""
+    name = (lang.name or lang.language or "").strip()
+    details = []
+    if lang.proficiency:
+        details.append(lang.proficiency.strip())
+    elif lang.level:
+        details.append(lang.level.strip())
+    if lang.notes:
+        details.append(lang.notes.strip())
+
+    if details:
+        details_str = ", ".join(details)
+        return f"{name} ({details_str})"
+    return name
+
+
+FONTS_DIR = Path(__file__).parent / "fonts"
+
+
+def _register_fonts(pdf: FPDF):
+    """Register custom TTF fonts (such as CMU Serif Roman) in FPDF."""
+    search_dirs = [
+        FONTS_DIR,
+        Path.home() / ".local" / "share" / "fonts",
+        Path("/usr/share/fonts/truetype/cmu"),
+    ]
+
+    def _find(filenames: list[str]) -> Path | None:
+        for d in search_dirs:
+            for name in filenames:
+                p = d / name
+                if p.exists():
+                    return p
+        return None
+
+    regular = _find(["cmu.serif-roman.ttf", "cmunrm.ttf"])
+    bold = _find(["cmunbx.ttf", "cmu.serif-bold.ttf"])
+    italic = _find(["cmunti.ttf", "cmu.serif-italic.ttf"])
+    bold_italic = _find(["cmunbi.ttf", "cmu.serif-bolditalic.ttf"])
+
+    if regular:
+        for family in ("CMU Serif Roman", "CMU Serif"):
+            pdf.add_font(family, "", str(regular))
+            if bold:
+                pdf.add_font(family, "B", str(bold))
+            if italic:
+                pdf.add_font(family, "I", str(italic))
+            if bold_italic:
+                pdf.add_font(family, "BI", str(bold_italic))
 
 
 class ResumePDF(FPDF):
     """Custom FPDF class for ATS-friendly resume generation."""
 
-    def __init__(self, show_skill_years: bool = False):
+    def __init__(
+        self,
+        show_skill_years: bool = False,
+        lang: str = "en",
+        font_family: str | None = None,
+    ):
         super().__init__()
         self.show_skill_years = show_skill_years
+        self.lang = (lang or "en").lower().strip()
+        self.headings = get_section_headings(self.lang)
+        self.labels = get_labels(self.lang)
+        self.font_family = resolve_font_family(font_family)
+        _register_fonts(self)
         self.set_margins(PAGE_MARGIN_LEFT, PAGE_MARGIN_TOP, PAGE_MARGIN_RIGHT)
         self.set_auto_page_break(auto=True, margin=PAGE_MARGIN_BOTTOM)
         self.add_page()
@@ -88,8 +143,8 @@ class ResumePDF(FPDF):
         profile = resume.profile
 
         # Name
-        self.set_font(FONT_FAMILY, "B", FONT_SIZE_NAME)
-        self.cell(
+        self.set_font(self.font_family, "B", FONT_SIZE_NAME)
+        self.multi_cell(
             0, 8, _sanitize_text(profile.name), align="C", new_x="LMARGIN", new_y="NEXT"
         )
         self.ln(2)
@@ -102,13 +157,15 @@ class ResumePDF(FPDF):
             contact_parts.append(profile.phone)
         if profile.location:
             contact_parts.append(profile.location)
+        if profile.nationality:
+            contact_parts.append(profile.nationality)
         if profile.linkedin:
             contact_parts.append(profile.linkedin)
 
         if contact_parts:
-            self.set_font(FONT_FAMILY, "", FONT_SIZE_SMALL)
+            self.set_font(self.font_family, "", FONT_SIZE_SMALL)
             contact_line = "  |  ".join(contact_parts)
-            self.cell(
+            self.multi_cell(
                 0,
                 LINE_HEIGHT,
                 _sanitize_text(contact_line),
@@ -120,15 +177,22 @@ class ResumePDF(FPDF):
 
         # Headline
         if profile.headline:
-            self.set_font(FONT_FAMILY, "I", FONT_SIZE_SMALL)
-            self.multi_cell(0, LINE_HEIGHT, _sanitize_text(profile.headline), align="C")
+            self.set_font(self.font_family, "I", FONT_SIZE_SMALL)
+            self.multi_cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(profile.headline),
+                align="C",
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
             self.ln(1)
 
         self.ln(SECTION_SPACING)
 
     def _write_section_heading(self, title: str):
         """Write a section heading with a line separator."""
-        self.set_font(FONT_FAMILY, "B", FONT_SIZE_HEADING)
+        self.set_font(self.font_family, "B", FONT_SIZE_HEADING)
         self.cell(
             0,
             LINE_HEIGHT + 1,
@@ -145,51 +209,77 @@ class ResumePDF(FPDF):
         """Write professional summary section."""
         if not resume.summary:
             return
-        self._write_section_heading(SECTION_HEADINGS["summary"])
-        self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
-        self.multi_cell(0, LINE_HEIGHT, _sanitize_text(resume.summary))
+        self._write_section_heading(self.headings["summary"])
+        self.set_font(self.font_family, "", FONT_SIZE_BODY)
+        self.multi_cell(
+            0,
+            LINE_HEIGHT,
+            _sanitize_text(resume.summary),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
         self.ln(SECTION_SPACING)
 
     def _write_bullets(self, bullets: list):
         """Write an indented bullet list."""
-        self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+        self.set_font(self.font_family, "", FONT_SIZE_BODY)
         for bullet in bullets:
             # Temporarily increase left margin for bullet indentation
             original_margin = self.l_margin
             self.set_left_margin(original_margin + BULLET_INDENT)
             self.set_x(original_margin + BULLET_INDENT)
-            self.multi_cell(0, LINE_HEIGHT, _sanitize_text(f"- {bullet.text}"))
+            self.multi_cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(f"- {bullet.text}"),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
             self.set_left_margin(original_margin)
+            self.set_x(original_margin)
 
     def _write_technologies_line(self, technologies: list[str]):
         """Write the italic 'Technologies used: ...' line, if any are present."""
         if not technologies:
             return
         self.ln(1)
-        self.set_font(FONT_FAMILY, "I", FONT_SIZE_SMALL)
-        technologies_line = "Technologies used: " + ", ".join(technologies)
-        self.multi_cell(0, LINE_HEIGHT, _sanitize_text(technologies_line))
-        self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+        self.set_font(self.font_family, "I", FONT_SIZE_SMALL)
+        technologies_line = self.labels["technologies_used"] + ", ".join(technologies)
+        self.multi_cell(
+            0,
+            LINE_HEIGHT,
+            _sanitize_text(technologies_line),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        self.set_font(self.font_family, "", FONT_SIZE_BODY)
 
     def _write_experience(self, resume: SelectedResume):
         """Write experience section."""
         if not resume.experiences:
             return
-        self._write_section_heading(SECTION_HEADINGS["experience"])
+        self._write_section_heading(self.headings["experience"])
 
         for i, (exp, bullets) in enumerate(resume.experiences):
             # Company and role line
-            self.set_font(FONT_FAMILY, "B", FONT_SIZE_SUBHEADING)
-            self.cell(
-                0, LINE_HEIGHT, _sanitize_text(exp.role), new_x="LMARGIN", new_y="NEXT"
+            self.set_font(self.font_family, "B", FONT_SIZE_SUBHEADING)
+            self.multi_cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(exp.role),
+                new_x="LMARGIN",
+                new_y="NEXT",
             )
 
-            self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+            self.set_font(self.font_family, "", FONT_SIZE_BODY)
             company_line = exp.company
             if exp.location:
                 company_line += f" | {exp.location}"
-            company_line += f" | {exp.start_date} - {exp.end_date}"
-            self.cell(
+            end_date = exp.end_date
+            if self.lang in ("pt-br", "pt") and end_date and end_date.strip().lower() == "present":
+                end_date = self.labels["present"]
+            company_line += f" | {exp.start_date} - {end_date}"
+            self.multi_cell(
                 0,
                 LINE_HEIGHT,
                 _sanitize_text(company_line),
@@ -200,8 +290,14 @@ class ResumePDF(FPDF):
 
             # Description
             if exp.description:
-                self.set_font(FONT_FAMILY, "I", FONT_SIZE_BODY)
-                self.multi_cell(0, LINE_HEIGHT, _sanitize_text(exp.description))
+                self.set_font(self.font_family, "I", FONT_SIZE_BODY)
+                self.multi_cell(
+                    0,
+                    LINE_HEIGHT,
+                    _sanitize_text(exp.description),
+                    new_x="LMARGIN",
+                    new_y="NEXT",
+                )
                 self.ln(1)
 
             self._write_bullets(bullets)
@@ -216,12 +312,12 @@ class ResumePDF(FPDF):
         """Write projects section."""
         if not resume.projects:
             return
-        self._write_section_heading(SECTION_HEADINGS["projects"])
+        self._write_section_heading(self.headings["projects"])
 
         for i, (project, bullets) in enumerate(resume.projects):
             # Project name line
-            self.set_font(FONT_FAMILY, "B", FONT_SIZE_SUBHEADING)
-            self.cell(
+            self.set_font(self.font_family, "B", FONT_SIZE_SUBHEADING)
+            self.multi_cell(
                 0,
                 LINE_HEIGHT,
                 _sanitize_text(project.name),
@@ -230,9 +326,12 @@ class ResumePDF(FPDF):
             )
 
             # Dates line
-            self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
-            dates_line = f"{project.start_year} - {project.end_year}"
-            self.cell(
+            self.set_font(self.font_family, "", FONT_SIZE_BODY)
+            end_year = project.end_year
+            if self.lang in ("pt-br", "pt") and end_year and end_year.strip().lower() == "present":
+                end_year = self.labels["present"]
+            dates_line = f"{project.start_year} - {end_year}"
+            self.multi_cell(
                 0,
                 LINE_HEIGHT,
                 _sanitize_text(dates_line),
@@ -243,8 +342,14 @@ class ResumePDF(FPDF):
 
             # Description
             if project.description:
-                self.set_font(FONT_FAMILY, "I", FONT_SIZE_BODY)
-                self.multi_cell(0, LINE_HEIGHT, _sanitize_text(project.description))
+                self.set_font(self.font_family, "I", FONT_SIZE_BODY)
+                self.multi_cell(
+                    0,
+                    LINE_HEIGHT,
+                    _sanitize_text(project.description),
+                    new_x="LMARGIN",
+                    new_y="NEXT",
+                )
                 self.ln(1)
 
             self._write_bullets(bullets)
@@ -259,19 +364,26 @@ class ResumePDF(FPDF):
         """Write skills section."""
         if not resume.skill_categories:
             return
-        self._write_section_heading(SECTION_HEADINGS["skills"])
+        self._write_section_heading(self.headings["skills"])
 
-        self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+        self.set_font(self.font_family, "", FONT_SIZE_BODY)
         for cat in resume.skill_categories:
             skill_names = [
-                _format_skill(s, show_years=self.show_skill_years) for s in cat.skills
+                _format_skill(s, show_years=self.show_skill_years, lang=self.lang)
+                for s in cat.skills
             ]
             cat_label = _sanitize_text(f"{cat.category}: ")
-            self.set_font(FONT_FAMILY, "B", FONT_SIZE_BODY)
+            self.set_font(self.font_family, "B", FONT_SIZE_BODY)
             self.cell(self.get_string_width(cat_label), LINE_HEIGHT, cat_label)
-            self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+            self.set_font(self.font_family, "", FONT_SIZE_BODY)
             remaining = _sanitize_text(", ".join(skill_names))
-            self.multi_cell(0, LINE_HEIGHT, remaining)
+            self.multi_cell(
+                0,
+                LINE_HEIGHT,
+                remaining,
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
             self.ln(0.5)
 
         self.ln(SECTION_SPACING)
@@ -280,14 +392,33 @@ class ResumePDF(FPDF):
         """Write certifications section."""
         if not resume.certifications:
             return
-        self._write_section_heading(SECTION_HEADINGS["certifications"])
+        self._write_section_heading(self.headings["certifications"])
 
-        self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+        self.set_font(self.font_family, "", FONT_SIZE_BODY)
         for cert in resume.certifications:
             line = cert.name
             if cert.issuer:
                 line += f" - {cert.issuer}"
-            self.cell(
+            self.multi_cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(f"- {line}"),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
+
+        self.ln(SECTION_SPACING)
+
+    def _write_languages(self, resume: SelectedResume):
+        """Write languages section."""
+        if not resume.languages:
+            return
+        self._write_section_heading(self.headings["languages"])
+
+        self.set_font(self.font_family, "", FONT_SIZE_BODY)
+        for lang in resume.languages:
+            line = _format_language(lang)
+            self.multi_cell(
                 0,
                 LINE_HEIGHT,
                 _sanitize_text(f"- {line}"),
@@ -301,16 +432,16 @@ class ResumePDF(FPDF):
         """Write education section."""
         if not resume.education:
             return
-        self._write_section_heading(SECTION_HEADINGS["education"])
+        self._write_section_heading(self.headings["education"])
 
-        self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+        self.set_font(self.font_family, "", FONT_SIZE_BODY)
         for edu in resume.education:
             # Degree and field on first line (bold)
-            self.set_font(FONT_FAMILY, "B", FONT_SIZE_BODY)
+            self.set_font(self.font_family, "B", FONT_SIZE_BODY)
             degree_line = edu.degree
             if edu.field:
                 degree_line += f", {edu.field}"
-            self.cell(
+            self.multi_cell(
                 0,
                 LINE_HEIGHT,
                 _sanitize_text(degree_line),
@@ -319,26 +450,30 @@ class ResumePDF(FPDF):
             )
 
             # Institution and dates on second line
-            self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+            self.set_font(self.font_family, "", FONT_SIZE_BODY)
             inst_line = edu.institution
             if edu.start_year and edu.end_year:
                 inst_line += f" ({edu.start_year} - {edu.end_year})"
             elif edu.end_year:
                 inst_line += f" ({edu.end_year})"
-            self.cell(
-                0, LINE_HEIGHT, _sanitize_text(inst_line), new_x="LMARGIN", new_y="NEXT"
+            self.multi_cell(
+                0,
+                LINE_HEIGHT,
+                _sanitize_text(inst_line),
+                new_x="LMARGIN",
+                new_y="NEXT",
             )
 
             if edu.notes:
-                self.set_font(FONT_FAMILY, "I", FONT_SIZE_SMALL)
-                self.cell(
+                self.set_font(self.font_family, "I", FONT_SIZE_SMALL)
+                self.multi_cell(
                     0,
                     LINE_HEIGHT,
                     _sanitize_text(edu.notes),
                     new_x="LMARGIN",
                     new_y="NEXT",
                 )
-                self.set_font(FONT_FAMILY, "", FONT_SIZE_BODY)
+                self.set_font(self.font_family, "", FONT_SIZE_BODY)
 
             self.ln(1)
 
@@ -346,10 +481,21 @@ class ResumePDF(FPDF):
 
 
 def generate_pdf(
-    resume: SelectedResume, output_path: Path, show_skill_years: bool = False
+    resume: SelectedResume,
+    output_path: Path,
+    show_skill_years: bool = False,
+    lang: str = "en",
+    font: str | None = None,
 ) -> Path:
     """Generate an ATS-friendly PDF resume."""
-    pdf = ResumePDF(show_skill_years=show_skill_years)
+    font_to_use = font or (
+        resume.profile.font
+        if hasattr(resume, "profile") and resume.profile
+        else None
+    )
+    pdf = ResumePDF(
+        show_skill_years=show_skill_years, lang=lang, font_family=font_to_use
+    )
 
     # Write header (name + contact)
     pdf._write_header(resume)
@@ -357,11 +503,12 @@ def generate_pdf(
     # Write sections in the determined order
     section_writers = {
         "summary": pdf._write_summary,
+        "education": pdf._write_education,
         "experience": pdf._write_experience,
         "projects": pdf._write_projects,
-        "skills": pdf._write_skills,
         "certifications": pdf._write_certifications,
-        "education": pdf._write_education,
+        "languages": pdf._write_languages,
+        "skills": pdf._write_skills,        
     }
 
     for section in resume.section_order:

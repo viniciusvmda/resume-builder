@@ -35,6 +35,15 @@ python -m resume_builder generate --job-description-text "We are looking for..."
 # Pass contact info at runtime (avoids storing sensitive data in files)
 python -m resume_builder generate --email "you@example.com" --phone "+55 99 99999-9999"
 
+# Specify custom section order using YAML names (by default, follows original project order)
+python -m resume_builder generate --section-order "profile,education,experiences,projects,skills"
+
+# Choose font family (defaults to Helvetica; also supports 'cmu-serif', 'times', etc.)
+python -m resume_builder generate --font cmu-serif
+
+# Generate in Brazilian Portuguese or English
+python -m resume_builder generate --lang pt-br
+
 # Specify custom data directory or output path
 python -m resume_builder --data-dir ./data generate --output ./my-resume.pdf
 ```
@@ -49,7 +58,7 @@ trusting our own data model's field names. Without a job description,
 
 ## How It Works
 
-1. **Reads** structured YAML career data from `data/` (profile, experiences, skills, certifications, education)
+1. **Reads** structured YAML career data from `data/` (profile, experiences, skills, certifications, education, languages)
 2. **Optionally scores** content against a job description (TF-IDF cosine similarity + keyword matching) to select and rank what goes into the resume
 3. **Selects and ranks** the most relevant skills, experience bullets, and certifications
 4. **Generates** a clean, ATS-friendly PDF (single-column, standard fonts, no graphics)
@@ -59,16 +68,36 @@ trusting our own data model's field names. Without a job description,
 
 Edit your career data in `data/`:
 
-- `profile.yaml` — Name, contact info, headline, summary
+- `profile.yaml` — Name, contact info, optional nationality, headline, summary, and optional `section_order`
 - `experiences.yaml` — Work history with bullet points and per-role technologies used (rendered in the PDF and used for scoring)
 - `projects.yaml` — Optional. Projects with bullet points and per-project technologies used, like experiences but with no company/role and year-only dates (omit the file entirely if you have none)
 - `skills.yaml` — Skills grouped by category with years of experience
 - `certifications.yaml` — Professional certifications
 - `education.yaml` — Degrees and institutions
+- `languages.yaml` — Optional. Languages and proficiencies (e.g. Native, C1, B2) with optional notes
+
+### Custom Section Order in `profile.yaml`
+
+In addition to the `--section-order` CLI flag, you can set a persistent section order directly in `profile.yaml` using YAML names (as a list or comma-separated string):
+
+```yaml
+name: "Alex Supertramp"
+headline: "Senior Backend Engineer"
+nationality: "Brazilian" # Optional
+font: "cmu-serif" # Optional: "helvetica" (default) or "cmu-serif"
+# Custom section order (overridden by --section-order CLI flag if passed)
+section_order:
+  - profile
+  - education
+  - experiences
+  - projects
+  - languages
+  - skills
+```
 
 ## ATS Optimization Strategies Applied
 
-- Single-column layout with standard fonts (Helvetica)
+- Single-column layout with standard fonts (Helvetica by default, with optional CMU Serif Roman via `--font cmu-serif`)
 - Standard section headings (Professional Summary, Professional Experience, Technical Skills, etc.)
 - No graphics, tables, or images
 - Keywords from job description mirrored in content selection

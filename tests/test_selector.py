@@ -288,3 +288,78 @@ class TestSelectTargeted:
         certifications_idx = result.section_order.index("certifications")
         assert projects_idx < certifications_idx
         assert result.projects[0][0].name == "Open-Source Rate Limiter"
+
+    def test_custom_section_order_targeted(self, sample_resume_data):
+        scored = {
+            "jd_keywords": [],
+            "scored_skills": [],
+            "scored_experiences": [],
+            "scored_projects": [],
+            "scored_certifications": [],
+            "overall_score": 0.5,
+        }
+        result = select_targeted(
+            sample_resume_data,
+            scored,
+            section_order="education, profile, experiences, skills",
+        )
+        assert result.section_order == [
+            "education",
+            "summary",
+            "experience",
+            "skills",
+        ]
+
+
+class TestCustomSectionOrder:
+    def test_generic_custom_order_string(self, sample_resume_data):
+        result = select_generic(
+            sample_resume_data,
+            section_order="education, profile, experiences, skills",
+        )
+        assert result.section_order == [
+            "education",
+            "summary",
+            "experience",
+            "skills",
+        ]
+
+    def test_generic_custom_order_with_yaml_extensions(self, sample_resume_data):
+        result = select_generic(
+            sample_resume_data,
+            section_order="education.yaml, profile.yaml, experiences.yaml, skills.yaml",
+        )
+        assert result.section_order == [
+            "education",
+            "summary",
+            "experience",
+            "skills",
+        ]
+
+    def test_generic_custom_order_list(self, sample_resume_data):
+        result = select_generic(
+            sample_resume_data,
+            section_order=["education", "profile", "projects", "certifications"],
+        )
+        assert result.section_order == [
+            "education",
+            "summary",
+            "projects",
+            "certifications",
+        ]
+
+    def test_custom_order_from_profile(self, sample_resume_data):
+        sample_resume_data.profile.section_order = [
+            "education.yaml",
+            "profile.yaml",
+            "experiences.yaml",
+        ]
+        result = select_generic(sample_resume_data)
+        assert result.section_order == ["education", "summary", "experience"]
+
+    def test_invalid_section_name_raises_error(self, sample_resume_data):
+        import pytest
+
+        with pytest.raises(ValueError, match="Unknown section name 'invalid_section'"):
+            select_generic(sample_resume_data, section_order="invalid_section, profile")
+

@@ -75,3 +75,57 @@ class TestLoadResumeData:
         resume_data = load_resume_data(data_dir)
         assert len(resume_data.projects) == 1
         assert resume_data.projects[0].name == "Side Project"
+
+
+class TestLoadProfile:
+    def test_loads_nationality_when_present(self, data_dir):
+        from resume_builder.parser import load_profile
+
+        (data_dir / "profile.yaml").write_text(
+            "name: Jane Doe\nnationality: Brazilian\nlocation: São Paulo, Brazil\n"
+        )
+        profile = load_profile(data_dir)
+        assert profile.nationality == "Brazilian"
+        assert profile.location == "São Paulo, Brazil"
+
+    def test_nationality_defaults_to_none(self, data_dir):
+        from resume_builder.parser import load_profile
+
+        (data_dir / "profile.yaml").write_text("name: Jane Doe\n")
+        profile = load_profile(data_dir)
+        assert profile.nationality is None
+
+
+class TestLoadLanguages:
+    def test_missing_file_returns_empty_list(self, data_dir):
+        from resume_builder.parser import load_languages
+
+        assert load_languages(data_dir) == []
+
+    def test_loads_languages_dict_and_string(self, data_dir):
+        from resume_builder.parser import load_languages
+
+        (data_dir / "languages.yaml").write_text(
+            """
+- language: Portuguese
+  proficiency: Native
+- language: English
+  proficiency: C1
+- language: Italian
+  proficiency: B2
+  notes: Studied in Rome
+- "Spanish (B1)"
+"""
+        )
+        languages = load_languages(data_dir)
+        assert len(languages) == 4
+        assert languages[0].name == "Portuguese"
+        assert languages[0].proficiency == "Native"
+        assert languages[1].name == "English"
+        assert languages[1].proficiency == "C1"
+        assert languages[2].name == "Italian"
+        assert languages[2].proficiency == "B2"
+        assert languages[2].notes == "Studied in Rome"
+        assert languages[3].name == "Spanish (B1)"
+
+
